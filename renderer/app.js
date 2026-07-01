@@ -393,11 +393,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn || !btn.dataset.tooltab) return;
     $('tools-tabs').querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    ['decoder', 'cache', 'build'].forEach(id => {
+    ['decoder', 'sam', 'cache', 'build'].forEach(id => {
       const el = $('tooltab-' + id);
       if (el) el.classList.toggle('hidden', id !== btn.dataset.tooltab);
     });
     if (btn.dataset.tooltab === 'cache') refreshCacheStats();
+    if (btn.dataset.tooltab === 'sam') refreshSamStatus();
   });
 
   /* MANIFEST DECODER */
@@ -445,6 +446,56 @@ document.addEventListener('DOMContentLoaded', () => {
     await window.greed.clearCache();
     setStatus($('cache-status'), 'Cache cleared.', 'success');
     refreshCacheStats();
+  });
+
+  /* SAM */
+  let samPath = null;
+
+  async function refreshSamStatus() {
+    const statusEl = $('sam-status');
+    const launchBtn = $('sam-launch');
+    try {
+      const result = await window.greed.samDetect();
+      if (result.found) {
+        samPath = result.path;
+        statusEl.textContent = 'SAM found at: ' + result.path;
+        launchBtn.disabled = false;
+      } else {
+        samPath = null;
+        statusEl.textContent = 'SAM not found. Download or browse to locate it.';
+        launchBtn.disabled = true;
+      }
+    } catch (err) {
+      statusEl.textContent = 'Error: ' + err.message;
+    }
+  }
+
+  $('sam-launch').addEventListener('click', async () => {
+    if (!samPath) return;
+    try {
+      const r = await window.greed.samLaunch({ exePath: samPath, appId: state.currentDetail ? state.currentDetail.appId : null });
+      setStatus($('sam-launch-status'), r.success ? 'SAM launched' : 'Failed: ' + r.error, r.success ? 'success' : 'error');
+    } catch (err) {
+      setStatus($('sam-launch-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
+  $('sam-download').addEventListener('click', async () => {
+    try {
+      const info = await window.greed.samDownload();
+      if (info.url) window.greed.openExternal(info.url);
+    } catch (err) {
+      setStatus($('sam-launch-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
+  $('sam-browse').addEventListener('click', async () => {
+    const filePath = await window.greed.pickFile();
+    if (filePath) {
+      samPath = filePath;
+      $('sam-status').textContent = 'SAM set to: ' + filePath;
+      $('sam-launch').disabled = false;
+    }
   });
 
   /* BUILD BUTTONS */

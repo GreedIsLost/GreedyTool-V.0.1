@@ -4,6 +4,7 @@ const { decodeManifest, formatManifestSummary } = require('../protobuf');
 const { checkForUpdate } = require('../updater');
 const history = require('../history');
 const { clearCache, getCacheStats } = require('../cache');
+const { detectSam, launchSam, downloadSam } = require('../sam');
 
 function register(ipcMain, getMainWindow) {
   ipcMain.handle('decode-manifest', async (_e, filePath) => {
@@ -51,6 +52,16 @@ function register(ipcMain, getMainWindow) {
     }
   });
 
+  ipcMain.handle('pick-file', async () => {
+    const { dialog } = require('electron');
+    const mainWindow = getMainWindow();
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+    });
+    if (result.canceled) return null;
+    return result.filePaths[0];
+  });
+
   ipcMain.handle('pick-manifest-file', async () => {
     const { dialog } = require('electron');
     const mainWindow = getMainWindow();
@@ -77,6 +88,28 @@ function register(ipcMain, getMainWindow) {
     const result = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
     if (result.canceled) return null;
     return result.filePaths[0];
+  });
+
+  ipcMain.handle('sam-detect', async () => {
+    try {
+      const exePath = await detectSam();
+      return { found: !!exePath, path: exePath };
+    } catch (err) {
+      return { found: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('sam-launch', async (_e, { exePath, appId }) => {
+    try {
+      await launchSam(exePath, appId);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('sam-download', async () => {
+    return await downloadSam();
   });
 }
 

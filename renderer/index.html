@@ -312,8 +312,24 @@
 
         <div class="tab-bar" id="tools-tabs">
           <button class="active" data-tooltab="decoder">Manifest Decoder</button>
+          <button data-tooltab="sam">SAM</button>
           <button data-tooltab="cache">Cache</button>
           <button data-tooltab="build">Build</button>
+        </div>
+
+        <!-- SAM -->
+        <div id="tooltab-sam" class="card hidden">
+          <div class="card-header">Steam Achievement Manager</div>
+          <p class="text-muted" style="font-size:13px;margin-bottom:10px;">
+            Launch SAM to manage achievements and stats for imported games.
+          </p>
+          <div id="sam-status" class="text-muted" style="font-size:13px;margin-bottom:10px;">Checking...</div>
+          <div class="flex gap-8" style="flex-wrap:wrap;">
+            <button id="sam-launch" class="btn btn-primary btn-sm" disabled>Launch SAM</button>
+            <button id="sam-download" class="btn btn-secondary btn-sm">Download SAM</button>
+            <button id="sam-browse" class="btn btn-secondary btn-sm">Browse for SAM</button>
+          </div>
+          <div id="sam-launch-status" class="status-bar info hidden mt-8"></div>
         </div>
 
         <!-- MANIFEST DECODER -->

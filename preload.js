@@ -22,5 +22,9 @@ contextBridge.exposeInMainWorld('greed', {
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   getCacheStats: () => ipcRenderer.invoke('get-cache-stats'),
   clearCache: () => ipcRenderer.invoke('clear-cache'),
+  pickFile: () => ipcRenderer.invoke('pick-file'),
   pickManifestFile: () => ipcRenderer.invoke('pick-manifest-file'),
+  samDetect: () => ipcRenderer.invoke('sam-detect'),
+  samLaunch: (data) => ipcRenderer.invoke('sam-launch', data),
+  samDownload: () => ipcRenderer.invoke('sam-download'),
 });
