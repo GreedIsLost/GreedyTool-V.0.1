@@ -109,7 +109,11 @@ function register(ipcMain, getMainWindow) {
   });
 
   ipcMain.handle('sam-download', async () => {
-    return await downloadSam();
+    try {
+      return await downloadSam();
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   });
 }
 

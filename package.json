@@ -6,6 +6,7 @@
   "scripts": {
     "start": "electron .",
     "start:dev": "NODE_ENV=development electron .",
+    "postinstall": "node core/setup-sam.js",
     "build": "electron-builder",
     "build:linux": "electron-builder --linux",
     "build:win": "electron-builder --win",
@@ -22,7 +23,8 @@
       "preload.js",
       "package.json",
       "core/**/*",
-      "renderer/**/*"
+      "renderer/**/*",
+      "sam/**"
     ],
     "linux": {
       "target": [

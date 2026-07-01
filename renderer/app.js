@@ -482,10 +482,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('sam-download').addEventListener('click', async () => {
     try {
+      $('sam-download').disabled = true;
+      $('sam-download').textContent = 'Downloading...';
       const info = await window.greed.samDownload();
-      if (info.url) window.greed.openExternal(info.url);
+      if (info.success) {
+        setStatus($('sam-launch-status'), 'SAM downloaded: ' + info.path, 'success');
+        refreshSamStatus();
+      } else {
+        setStatus($('sam-launch-status'), 'Download failed: ' + (info.error || 'unknown'), 'error');
+      }
     } catch (err) {
       setStatus($('sam-launch-status'), 'Error: ' + err.message, 'error');
+    } finally {
+      $('sam-download').disabled = false;
+      $('sam-download').textContent = 'Download SAM';
     }
   });
 

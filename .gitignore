@@ -5,3 +5,5 @@ greed-history.json
 *.log
 .DS_Store
 Thumbs.db
+sam/SAM.Picker.exe
+sam/sam.zip
