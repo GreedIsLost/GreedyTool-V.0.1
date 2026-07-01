@@ -1,37 +1,55 @@
-# GREEDYTOOL
+<p align="center">
+  <img src="https://raw.githubusercontent.com/GreedIsLost/GreedyTool-V.0.1/main/assets/banner.svg" width="600" alt="GreedyTool">
+</p>
 
-```
-  _____ _____  ______ _____   ____  _   _ _____  _   _
- / ____|  __ \|  ____|  __ \ / __ \| \ | |  __ \| \ | |
-| |  __| |__) | |__  | |__) | |  | |  \| | |  | |  \| |
-| | |_ |  _  /|  __| |  ___/| |  | | . ` | |  | | . ` |
-| |__| | | \ \| |____| |    | |__| | |\  | |__| | |\  |
- \_____|_|  \_\______|_|     \____/|_| \_|_____/|_| \_|
-```
+<p align="center">
+  <b>Steam Manifest & Lua Tool</b><br>
+  <i>Generate manifests, download from CDN, unlock achievements.</i>
+</p>
+
+<p align="center">
+  <a href="#"><img src="https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=white" alt="Electron"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white" alt="Node.js"></a>
+  <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs"></a>
+</p>
+
+<br>
 
 > **For Educational & Research Purposes Only**
 
-[![Electron](https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=white)]()
-[![Node](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)]()
-[![License](https://img.shields.io/badge/License-MIT-yellow)]()
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)]()
+<br>
 
-**GreedyTool** generates Steam Lua + ACF manifests, downloads depot manifests from the CDN, and bundles SAM for achievement management — all from a slick Electron desktop app.
+---
+
+## Overview
+
+A desktop tool for generating Lua and ACF manifests, downloading real depot manifests from the Steam CDN, and managing your library — all wrapped in a native Electron interface with built-in Steam Achievement Manager support.
 
 ---
 
 ## Features
 
-| | |
-|---|---|
-| **Instant Generation** | Enter an App ID, get Lua + ACF manifests in one click |
-| **CDN Download** | 12-mirror fallback chain for real depot manifests |
-| **Import + Restart** | Injects manifests into Steam and restarts it automatically |
-| **Batch Processing** | Queue up multiple App IDs with concurrency control |
-| **Manifest Decoder** | Inspect `.manifest` binary files in a readable format |
-| **SAM Integration** | Bundled via `npm install` — unlock achievements from the app |
-| **Backup Export** | Package everything into a `.zip` archive |
-| **Drag & Drop** | Drop Steam store links or raw App IDs |
+<br>
+
+<table>
+  <tr>
+    <td width="50%" align="center"><b>Generate</b><br><sub>Enter an App ID, get Lua + ACF in one click</sub></td>
+    <td width="50%" align="center"><b>CDN Download</b><br><sub>12-mirror fallback for real depot manifests</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>Import + Restart</b><br><sub>Inject manifests and restart Steam automatically</sub></td>
+    <td width="50%" align="center"><b>Batch Process</b><br><sub>Queue App IDs with concurrency control</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>Manifest Decoder</b><br><sub>Inspect <code>.manifest</code> binary files</sub></td>
+    <td width="50%" align="center"><b>Achievement Unlocker</b><br><sub>Bundled SAM — launch with one click</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>Backup Export</b><br><sub>Package manifests + Lua into <code>.zip</code></sub></td>
+    <td width="50%" align="center"><b>Drag & Drop</b><br><sub>Drop store links or raw App IDs</sub></td>
+  </tr>
+</table>
 
 ---
 
@@ -40,33 +58,50 @@
 ```bash
 git clone https://github.com/GreedIsLost/GreedyTool-V.0.1.git
 cd GreedyTool-V.0.1
-npm install    # also downloads SAM.Picker.exe
+npm install       # also downloads SAM.Picker.exe
 npm start
 ```
 
 ---
 
-## Pipeline
+## How It Works
 
 ```
-App ID
-  |
-  v
-Steam Store API  -----> Depot Lookup
-  |                          |
-  |    (fallback)            |
-  +--> SteamDB Scraping -----+
-  |
-  v
-CDN Download (12 mirrors)
-  |
-  v
-Lua + ACF Generation ---> Import to Steam
-  |                          |
-  |                          v
-  +--> Export .zip        Restart Steam
-  |
-  +--> Launch SAM (unlock achievements)
+                  +-------------+
+                  |   App ID    |
+                  +------+------+
+                         |
+                         v
+                 +-------+--------+
+                 |  Steam Store   |
+                 |     API        |
+                 +-------+--------+
+                         |
+                         v
+                 +-------+--------+
+                 |  Depot Lookup  |
+                 +-------+--------+
+                         |
+           +-------------+-------------+
+           |                           |
+           v                           v
+  +--------+---------+       +---------+--------+
+  |  SteamDB Scrape  |       |  CDN Download    |
+  |   (fallback)     |       |  (12 mirrors)    |
+  +------------------+       +---------+--------+
+                                         |
+                                         v
+                                +--------+---------+
+                                |  Lua + ACF Gen   |
+                                +--------+---------+
+                                         |
+                  +----------------------+----------------------+
+                  |                      |                      |
+                  v                      v                      v
+         +--------+-------+    +--------+-------+    +--------+-------+
+         | Import to Steam |    |  Export .zip    |    | Launch SAM    |
+         | + Restart       |    |  Backup         |    | (achievements)|
+         +-----------------+    +-----------------+    +---------------+
 ```
 
 ---
@@ -75,31 +110,35 @@ Lua + ACF Generation ---> Import to Steam
 
 ```
 GreedyTool/
-+-- main.js                    Electron main process
-+-- preload.js                 Context bridge (IPC API)
++-- main.js                     Electron main process
++-- preload.js                  Context bridge (IPC API)
+
 +-- renderer/
-|   +-- index.html
-|   +-- app.js
+|   +-- index.html              UI layout
+|   +-- app.js                  UI logic
+
 +-- core/
-|   +-- cache.js               Local manifest cache
-|   +-- downloader.js          CDN downloader (12 mirrors, redirect-aware)
-|   +-- exporter.js            ZIP backup exporter
-|   +-- history.js             Session and settings persistence
-|   +-- lua.js                 Lua manifest generator
-|   +-- manifest.js            Processing pipeline orchestrator
-|   +-- protobuf.js            Steam protobuf decoder
-|   +-- sam.js                 SAM detection, launching, download
-|   +-- setup-sam.js           Postinstall script to bundle SAM
-|   +-- steamapi.js            Steam Store API client
-|   +-- steamkit.js            Depot info (API -> SteamDB -> fallback)
-|   +-- updater.js             Self-updater
-|   +-- utils.js               ACF manifest generator
+|   +-- sam.js                  SAM detection, launch, download
+|   +-- setup-sam.js            Postinstall bundler for SAM
+|   +-- manifest.js             Process pipeline orchestrator
+|   +-- downloader.js           CDN download (12 mirrors)
+|   +-- steamkit.js             Depot lookup (API -> SteamDB -> common)
+|   +-- steamapi.js             Steam Store API client
+|   +-- lua.js                  Lua manifest generator
+|   +-- utils.js                ACF manifest generator
+|   +-- protobuf.js             Steam protobuf decoder
+|   +-- cache.js                Local manifest cache
+|   +-- exporter.js             ZIP backup exporter
+|   +-- history.js              Session persistence
+|   +-- updater.js              Self-updater
 |   +-- ipc/
-|       +-- app.js             SAM, file picker, cache, settings
-|       +-- library.js         Import to Steam logic
-|       +-- steam.js           Process, search, app details
+|       +-- app.js              SAM, file picker, cache, settings
+|       +-- library.js          Import to Steam
+|       +-- steam.js            Process, search, details
+
 +-- sam/
-|   +-- SAM.Picker.exe         (downloaded by postinstall)
+|   +-- SAM.Picker.exe          (downloaded by postinstall)
+
 +-- package.json
 ```
 
@@ -115,21 +154,20 @@ GreedyTool/
 
 ### Concurrency
 
-Batch processing runs **3 concurrent downloads** by default to stay under rate limits.
+Batch processing runs **3 concurrent downloads** to stay under rate limits.
 
-### CDN Fallback Chain
+### CDN Fallback
 
 ```
-content-1.steampowered.com
-  -> content-8.steampowered.com
-    -> cloudflare.steampowered.com
-      -> steamstatic.com (with .crc)
-        -> steamstatic.com (without .crc)
+content-1.steampowered.com  ...  content-8.steampowered.com
+  -> cloudflare.steampowered.com
+    -> steamstatic.com (with .crc)
+      -> steamstatic.com (without .crc)
 ```
 
 ### SAM
 
-Steam Achievement Manager is downloaded automatically during `npm install` into `sam/SAM.Picker.exe`. From the app's Tools tab you can detect it, download it, browse for it, or launch it with the current App ID pre-loaded.
+Steam Achievement Manager is bundled automatically via `npm install` into `sam/SAM.Picker.exe`. From the **Tools** tab you can detect it, download it, browse for it, or launch it with the current App ID pre-loaded for instant achievement unlocking.
 
 ---
 
@@ -141,4 +179,4 @@ Pull requests are welcome. Open an issue for bugs, ideas, or questions.
 
 ## Disclaimer
 
-This tool is for **educational and research purposes only**. It interacts with publicly accessible Steam endpoints and does not bypass authentication or licensing. Paid unowned games will correctly show as unpurchased — no exploits.
+This tool is for **educational and research purposes only**. It interacts with publicly accessible Steam endpoints and does not bypass authentication or licensing. Paid unowned games will correctly show as unpurchased.
