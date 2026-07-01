@@ -546,7 +546,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.greed.onIdlerEvent('idler-guard-needed', (data) => {
     idlerState.status = 'guard-needed';
-    $('idler-guard-domain').textContent = data.domain || 'email';
+    $('idler-guard-domain').textContent = data.domain || 'Steam app';
+    if (data.lastCodeWrong) {
+      setStatus($('idler-connection-status'), 'Wrong guard code, try again', 'error');
+    }
     updateIdlerUI();
   });
 

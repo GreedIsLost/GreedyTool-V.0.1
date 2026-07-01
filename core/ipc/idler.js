@@ -12,7 +12,7 @@ function register(ipcMain, getMainWindow) {
 
   idler.on('status', (status) => send('idler-status', { status }));
   idler.on('loggedIn', () => send('idler-logged-in', {}));
-  idler.on('guard-needed', (domain) => send('idler-guard-needed', { domain }));
+  idler.on('guard-needed', (domain, lastCodeWrong) => send('idler-guard-needed', { domain, lastCodeWrong }));
   idler.on('error', (msg) => send('idler-error', { error: msg }));
   idler.on('idling-started', (appId) => send('idler-idling', { appId }));
   idler.on('idling-stopped', () => send('idler-stopped', {}));
