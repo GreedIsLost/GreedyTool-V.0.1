@@ -5,8 +5,14 @@ const CACHE_DIR = 'greed-cache';
 const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
 function getCacheDir() {
-  const { app } = require('electron');
-  return path.join(app.getPath('userData'), CACHE_DIR);
+  let dir;
+  try {
+    const { app } = require('electron');
+    dir = app.getPath('userData');
+  } catch {
+    dir = path.join(__dirname, '..');
+  }
+  return path.join(dir, CACHE_DIR);
 }
 
 async function ensureCacheDir() {

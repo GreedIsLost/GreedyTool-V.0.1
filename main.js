@@ -74,7 +74,7 @@ ipcMain.handle('update-check', async () => {
 
 ipcMain.handle('update-download', async () => {
   try {
-    autoUpdater.downloadUpdate();
+    await autoUpdater.downloadUpdate();
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };

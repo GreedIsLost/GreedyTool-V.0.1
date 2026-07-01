@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { app } = require('electron');
 
 const REPO = 'GreedIsLost/GreedyTool-V.0.1';
 

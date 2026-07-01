@@ -7,8 +7,6 @@ function formatBytes(bytes) {
 
 const state = {
   currentView: 'library',
-  searchResults: [],
-  batchResults: {},
   currentDetail: null,
   pendingBatchLua: {},
   lastManifestPath: null,
@@ -78,45 +76,55 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSidebarStatus();
 
   /* AUTO-UPDATE */
-  let updateInfo = null;
-
   window.greed.onUpdateEvent('update-checking', () => {
-    $('update-badge').textContent = 'Checking...';
-    $('update-badge').classList.remove('hidden');
+    const badge = $('update-badge');
+    if (badge) { badge.textContent = 'Checking...'; badge.classList.remove('hidden'); }
   });
 
   window.greed.onUpdateEvent('update-available', (data) => {
-    updateInfo = data;
-    $('update-badge').textContent = 'v' + data.version + ' — Download';
-    $('update-badge').classList.remove('hidden');
-    $('update-badge').onclick = () => window.greed.updateDownload();
+    const badge = $('update-badge');
+    if (badge) {
+      badge.textContent = 'v' + data.version + ' — Download';
+      badge.classList.remove('hidden');
+      badge.onclick = () => window.greed.updateDownload();
+    }
     const about = $('about-update');
-    about.textContent = 'Update v' + data.version + ' available — click to download';
-    about.onclick = () => window.greed.updateDownload();
+    if (about) {
+      about.textContent = 'Update v' + data.version + ' available — click to download';
+      about.onclick = () => window.greed.updateDownload();
+    }
   });
 
   window.greed.onUpdateEvent('update-not-available', () => {
-    $('update-badge').classList.add('hidden');
+    const badge = $('update-badge');
+    if (badge) badge.classList.add('hidden');
   });
 
   window.greed.onUpdateEvent('update-error', (data) => {
     console.error('Update error:', data.error);
-    $('update-badge').classList.add('hidden');
+    const badge = $('update-badge');
+    if (badge) badge.classList.add('hidden');
   });
 
   window.greed.onUpdateEvent('update-progress', (data) => {
     const pct = Math.round(data.percent);
-    $('update-badge').textContent = 'Downloading ' + pct + '%';
+    const badge = $('update-badge');
+    if (badge) badge.textContent = 'Downloading ' + pct + '%';
     const about = $('about-update');
-    about.textContent = 'Downloading update... ' + pct + '%';
+    if (about) about.textContent = 'Downloading update... ' + pct + '%';
   });
 
   window.greed.onUpdateEvent('update-downloaded', () => {
-    $('update-badge').textContent = 'Install & Restart';
-    $('update-badge').onclick = () => window.greed.updateInstall();
+    const badge = $('update-badge');
+    if (badge) {
+      badge.textContent = 'Install & Restart';
+      badge.onclick = () => window.greed.updateInstall();
+    }
     const about = $('about-update');
-    about.textContent = 'Update ready — click to install & restart';
-    about.onclick = () => window.greed.updateInstall();
+    if (about) {
+      about.textContent = 'Update ready — click to install & restart';
+      about.onclick = () => window.greed.updateInstall();
+    }
   });
 
   /* DRAG & DROP */
@@ -135,7 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  let _batchRunning = false;
   setupDropZone('drop-zone', (ids) => {
+    if (_batchRunning) return;
     if (ids.length === 1) {
       $('quick-appid').value = ids[0];
       quickGo();
@@ -146,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   setupDropZone('drop-zone-batch', (ids) => {
+    if (_batchRunning) return;
     $('batch-input').value = ids.join('\n');
     processBatchCall();
   });
@@ -175,7 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
       grid.querySelectorAll('.remove-game').forEach(b => {
         b.addEventListener('click', async () => {
           if (!confirm(`Remove App ${b.dataset.id} from Steam?`)) return;
-          await window.greed.removeGame(parseInt(b.dataset.id));
+          const result = await window.greed.removeGame(parseInt(b.dataset.id));
+          if (result && result.success === false) {
+            setStatus(status, 'Remove failed: ' + (result.error || 'unknown error'), 'error');
+            return;
+          }
           setStatus(status, 'Game removed. Restart Steam.', 'success');
           refreshLibrary();
         });
@@ -334,33 +349,39 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="btn btn-secondary quick-export" data-id="${appId}">Export Backup</button>
         <button class="btn btn-secondary quick-decode" data-id="${appId}" ${state.lastManifestPath ? '' : 'disabled'}>Decode Manifest</button>
       </div>`;
-    div.querySelector('.quick-import').onclick = async () => {
+    const importBtn = div.querySelector('.quick-import');
+    if (importBtn) importBtn.onclick = async () => {
       const r = await window.greed.importToSteam({ appId, luaContent: result.lua, depots: result.depots });
       setStatus($('search-status'), r.success ? 'Imported! Steam restarting.' : 'Failed: ' + r.error, r.success ? 'success' : 'error');
     };
-    div.querySelector('.quick-export').onclick = async () => {
+    const exportBtn = div.querySelector('.quick-export');
+    if (exportBtn) exportBtn.onclick = async () => {
       const paths = result.depots.filter(d => d.path).map(d => d.path);
       const exp = await window.greed.exportBackup({ appId, luaContent: result.lua, manifestPaths: paths });
       if (exp.success) setStatus($('search-status'), 'Backup saved: ' + exp.path, 'success');
     };
-    div.querySelector('.quick-decode').onclick = async () => {
+    const decodeBtn = div.querySelector('.quick-decode');
+    if (decodeBtn) decodeBtn.onclick = async () => {
       if (state.lastManifestPath) decodeManifestFile(state.lastManifestPath);
     };
   }
 
   /* BATCH */
   async function processBatchCall() {
+    if (_batchRunning) return;
+    _batchRunning = true;
     const raw = $('batch-input').value.trim();
-    if (!raw) return;
+    if (!raw) { _batchRunning = false; return; }
     const ids = raw.split(/[\n,]+/).map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
-    if (ids.length === 0) return;
+    if (ids.length === 0) { _batchRunning = false; return; }
     $('batch-results').innerHTML = '';
     loadingBtn($('batch-go'), true);
     $('batch-count').textContent = 'Processing ' + ids.length + ' app(s)...';
     setStatus($('batch-status'), 'Processing...', 'info');
+    $('batch-import-all').disabled = true;
     try {
       const batch = await window.greed.processBatch(ids);
-      if (!batch.success) { setStatus($('batch-status'), batch.error, 'error'); loadingBtn($('batch-go'), false); return; }
+      if (!batch.success) { setStatus($('batch-status'), batch.error, 'error'); loadingBtn($('batch-go'), false); _batchRunning = false; return; }
       state.pendingBatchLua = {};
       let html = '<div class="game-grid">';
       for (const id of ids) {
@@ -376,10 +397,10 @@ document.addEventListener('DOMContentLoaded', () => {
       html += '</div>';
       $('batch-results').innerHTML = html;
       $('batch-results').querySelectorAll('.batch-import-one').forEach(b => {
-        const id = b.dataset.id;
+        const id = parseInt(b.dataset.id);
         b.addEventListener('click', () => {
           const data = state.pendingBatchLua[id];
-          if (data) doImport(parseInt(id), data.lua, data.depots);
+          if (data) doImport(id, data.lua, data.depots).catch(err => console.error('import error:', err));
         });
       });
       $('batch-results').querySelectorAll('.batch-export-one').forEach(b => {
@@ -394,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
       $('batch-count').textContent = ids.length + ' app(s) ready';
     } catch (err) { console.error('batch error:', err); setStatus($('batch-status'), 'Error: ' + err.message, 'error'); }
     loadingBtn($('batch-go'), false);
+    _batchRunning = false;
   }
   $('batch-go').addEventListener('click', processBatchCall);
   $('batch-import-all').addEventListener('click', async () => {
@@ -541,6 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('idler-guard-area').classList.toggle('hidden', s !== 'guard-needed');
     $('idler-controls').classList.toggle('hidden', s !== 'connected' && s !== 'idling');
     const sd = $('idler-status-display');
+    if (!sd) return;
     if (s === 'idling' && idlerState.currentAppId) {
       sd.className = 'status-bar success mt-8';
       sd.textContent = 'Idling App ' + idlerState.currentAppId + ' - accumulating hours...';
