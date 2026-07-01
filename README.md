@@ -10,6 +10,7 @@
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=white" alt="Electron"></a>
   <a href="#"><img src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white" alt="Node.js"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Auto--Update-2ea44f" alt="Auto-Update"></a>
   <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License"></a>
   <a href="#"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs"></a>
 </p>
@@ -24,7 +25,7 @@
 
 ## Overview
 
-A desktop tool for generating Lua and ACF manifests, downloading real depot manifests from the Steam CDN, boosting playtime hours, and managing your library — all wrapped in a native Electron interface with built-in SAM support.
+A desktop tool for generating Lua and ACF manifests, downloading real depot manifests from the Steam CDN, boosting playtime hours, managing your library, and monitoring friends presence — all wrapped in a native Electron interface with built-in SAM support and auto-updates.
 
 ---
 
@@ -47,11 +48,11 @@ A desktop tool for generating Lua and ACF manifests, downloading real depot mani
   </tr>
   <tr>
     <td width="50%" align="center"><b>Hour Booster</b><br><sub>Idle any game to accumulate playtime hours</sub></td>
-    <td width="50%" align="center"><b>Drag & Drop</b><br><sub>Drop store links or raw App IDs</sub></td>
+    <td width="50%" align="center"><b>Friends Presence</b><br><sub>Online friends, game status, live updates</sub></td>
   </tr>
   <tr>
     <td width="50%" align="center"><b>Backup Export</b><br><sub>Package manifests + Lua into <code>.zip</code></sub></td>
-    <td width="50%" align="center"><b>Drag & Drop</b><br><sub>Drop store links or raw App IDs</sub></td>
+    <td width="50%" align="center"><b>Auto-Update</b><br><sub>Check, download, install via electron-updater</sub></td>
   </tr>
 </table>
 
@@ -123,6 +124,7 @@ GreedyTool/
 
 +-- core/
 |   +-- idler.js                Steam hour booster (steam-user)
+|   +-- friends.js              Friends presence watcher (EventEmitter)
 |   +-- sam.js                  SAM detection, launch, download
 |   +-- sam-download.js          Shared download utils (SAM)
 |   +-- setup-sam.js            Postinstall bundler for SAM
@@ -136,10 +138,10 @@ GreedyTool/
 |   +-- cache.js                Local manifest cache
 |   +-- exporter.js             ZIP backup exporter
 |   +-- history.js              Session persistence
-|   +-- updater.js              Self-updater
 |   +-- ipc/
 |       +-- app.js              SAM, file picker, cache, settings
 |       +-- idler.js            Idler IPC handlers
+|       +-- friends.js          Friends IPC handlers
 |       +-- library.js          Import to Steam
 |       +-- steam.js            Process, search, details
 
@@ -175,6 +177,14 @@ content-1.steampowered.com  ...  content-8.steampowered.com
 ### Hour Booster
 
 The **Idler** tool (Tools > Idler) uses `steam-user` to log into Steam and send play heartbeats for any App ID. This accumulates playtime hours on your profile without needing the game installed. Supports Steam Guard codes. Credentials go directly to Steam, not to any third party.
+
+### Friends Presence
+
+After idler login, the **Friends** panel (Tools > Idler) shows online friends with avatar, name, current game, and state badge. Uses the same `steam-user` client — no separate login. Polls every 30s and updates live on persona state changes.
+
+### Auto-Update
+
+Built-in update mechanism via `electron-updater`. On startup the app checks for new releases on GitHub. A badge appears in the sidebar when an update is available — click to download, then install & restart. Updates are published by pushing tags (`v*`) to the repo.
 
 ### SAM
 
