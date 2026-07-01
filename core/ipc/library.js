@@ -1,8 +1,24 @@
 const path = require('path');
 const fs = require('fs-extra');
+const { exec } = require('child_process');
 const { getSteamPath, getSteamAppsPath, killSteam, startSteam, generateAppManifest, getImportedGames, removeGame } = require('../utils');
 const { exportBackup } = require('../exporter');
 const history = require('../history');
+
+async function waitKill() {
+  const cmd = process.platform === 'win32'
+    ? 'tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul'
+    : 'pgrep -x steam >/dev/null 2>&1';
+  for (let i = 0; i < 15; i++) {
+    await new Promise(r => setTimeout(r, 1000));
+    try {
+      const { stdout } = await new Promise((resolve) => {
+        exec(cmd, (err) => resolve({ stdout: err ? '' : 'running' }));
+      });
+      if (!stdout.trim()) return;
+    } catch { return; }
+  }
+}
 
 function register(ipcMain, getMainWindow) {
   ipcMain.handle('import-to-steam', async (_e, { appId, luaContent, depots }) => {
@@ -14,22 +30,6 @@ function register(ipcMain, getMainWindow) {
       await fs.writeFile(path.join(steamappsPath, `${appId}.lua`), luaContent);
       await fs.writeFile(path.join(steamappsPath, `appmanifest_${appId}.acf`), generateAppManifest(appId, depots || []));
       await killSteam();
-      const waitKill = async () => {
-        const { exec } = require('child_process');
-        const cmd = process.platform === 'win32' ? 'tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul' : 'pgrep -x steam >/dev/null 2>&1';
-        for (let i = 0; i < 15; i++) {
-          await new Promise(r => setTimeout(r, 1000));
-          try {
-            const { stdout } = await new Promise((resolve, reject) => {
-              exec(cmd, (err, stdout, stderr) => {
-                if (err) return resolve({ stdout: '' });
-                resolve({ stdout });
-              });
-            });
-            if (!stdout.trim()) return;
-          } catch { return; }
-        }
-      };
       await waitKill();
       await startSteam(steamPath);
       return { success: true };
@@ -49,22 +49,6 @@ function register(ipcMain, getMainWindow) {
         await fs.writeFile(path.join(steamappsPath, `appmanifest_${appId}.acf`), generateAppManifest(appId, depots || []));
       }
       await killSteam();
-      const waitKill = async () => {
-        const { exec } = require('child_process');
-        const cmd = process.platform === 'win32' ? 'tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul' : 'pgrep -x steam >/dev/null 2>&1';
-        for (let i = 0; i < 15; i++) {
-          await new Promise(r => setTimeout(r, 1000));
-          try {
-            const { stdout } = await new Promise((resolve, reject) => {
-              exec(cmd, (err, stdout, stderr) => {
-                if (err) return resolve({ stdout: '' });
-                resolve({ stdout });
-              });
-            });
-            if (!stdout.trim()) return;
-          } catch { return; }
-        }
-      };
       await waitKill();
       await startSteam(steamPath);
       return { success: true, count: items.length };

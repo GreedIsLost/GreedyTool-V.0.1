@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { app } = require('electron');
 
-const REPO = 'kali/GreedyTool';
+const REPO = 'GreedIsLost/GreedyTool-V.0.1';
 
 async function checkForUpdate(currentVersion) {
   try {

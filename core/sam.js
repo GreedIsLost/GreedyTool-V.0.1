@@ -1,14 +1,19 @@
 const fs = require('fs-extra');
 const path = require('path');
-const https = require('https');
-const { execSync, exec } = require('child_process');
+const { exec } = require('child_process');
+const { getLatestReleaseUrl, downloadFile, extractZip } = require('./sam-download');
 
-const SAM_DIR = path.join(__dirname, '..', 'sam');
-const EXE_NAME = process.platform === 'win32' ? 'SAM.Picker.exe' : 'SAM.Picker';
-const EXE_PATH = path.join(SAM_DIR, EXE_NAME);
+const EXE_NAME = 'SAM.Picker.exe';
+
+function getSamDir() {
+  if (process.resourcesPath && __dirname.includes('app.asar')) {
+    return path.join(process.resourcesPath, 'sam');
+  }
+  return path.join(__dirname, '..', 'sam');
+}
 
 function getLocalSamPath() {
-  return EXE_PATH;
+  return path.join(getSamDir(), EXE_NAME);
 }
 
 function findCommonPaths() {
@@ -39,7 +44,8 @@ function findCommonPaths() {
 }
 
 async function detectSam() {
-  if (await fs.pathExists(EXE_PATH)) return EXE_PATH;
+  const local = getLocalSamPath();
+  if (await fs.pathExists(local)) return local;
   for (const p of findCommonPaths()) {
     if (await fs.pathExists(p)) return p;
   }
@@ -57,81 +63,26 @@ async function launchSam(exePath, appId) {
   });
 }
 
-async function getLatestReleaseUrl() {
-  return new Promise((resolve, reject) => {
-    https.get('https://api.github.com/repos/gibbed/SteamAchievementManager/releases/latest', {
-      headers: { 'User-Agent': 'GreedyTool/2.0', Accept: 'application/vnd.github+json' },
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const release = JSON.parse(data);
-          const zip = release.assets.find(a => a.name.endsWith('.zip'));
-          resolve(zip ? zip.browser_download_url : null);
-        } catch (e) { reject(e); }
-      });
-    }).on('error', reject);
-  });
-}
-
-async function downloadFile(url, dest, redirects = 5) {
-  if (redirects <= 0) throw new Error('Too many redirects');
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
-    https.get(url, { headers: { 'User-Agent': 'GreedyTool/2.0' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        file.close();
-        fs.unlink(dest).catch(() => {});
-        return resolve(downloadFile(res.headers.location, dest, redirects - 1));
-      }
-      if (res.statusCode !== 200) {
-        reject(new Error(`HTTP ${res.statusCode}`));
-        return;
-      }
-      res.pipe(file);
-      file.on('finish', () => file.close(resolve));
-    }).on('error', (err) => {
-      fs.unlink(dest).catch(() => {});
-      reject(err);
-    });
-  });
-}
-
-function extractZip(zipPath, destDir, entryName) {
-  if (process.platform === 'win32') {
-    execSync(
-      `powershell -command "& { Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force }"`,
-      { stdio: 'pipe', timeout: 60000 }
-    );
-  } else {
-    execSync(`unzip -o -j "${zipPath}" "${entryName}" -d "${destDir}"`, {
-      stdio: 'pipe', timeout: 60000,
-    });
-  }
-}
-
 async function downloadSam() {
-  if (await fs.pathExists(EXE_PATH)) {
-    return { success: true, path: EXE_PATH, message: 'Already installed' };
+  const samDir = getSamDir();
+  const exePath = path.join(samDir, EXE_NAME);
+
+  if (await fs.pathExists(exePath)) {
+    return { success: true, path: exePath, message: 'Already installed' };
   }
 
-  await fs.ensureDir(SAM_DIR);
+  await fs.ensureDir(samDir);
 
   const url = await getLatestReleaseUrl();
   if (!url) {
     return { success: false, error: 'Could not find SAM download URL' };
   }
 
-  const zipPath = path.join(SAM_DIR, 'sam.zip');
+  const zipPath = path.join(samDir, 'sam.zip');
   await downloadFile(url, zipPath);
-
-  const entryName = 'SAM.Picker.exe';
-  extractZip(zipPath, SAM_DIR, entryName);
+  extractZip(zipPath, samDir, EXE_NAME);
   await fs.unlink(zipPath);
 
-  const exeName = process.platform === 'win32' ? 'SAM.Picker.exe' : 'SAM.Picker';
-  const exePath = path.join(SAM_DIR, exeName);
   if (await fs.pathExists(exePath)) {
     return { success: true, path: exePath, message: 'Downloaded to project' };
   }
