@@ -2,6 +2,7 @@
   "name": "greedytool",
   "version": "2.1.0",
   "description": "Steam Manifest & Lua Tool",
+  "author": "GreedIsLost <https://github.com/GreedIsLost>",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
