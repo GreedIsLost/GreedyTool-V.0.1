@@ -1,3 +1,8 @@
+function formatManifestId(id) {
+  const num = Number(id);
+  return Number.isInteger(num) ? num.toString() : '0';
+}
+
 function generateLua(appId, title = 'Unknown Game', depots = []) {
   const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
   let lua = `-- Greed Lua Manifest\n`;
@@ -7,7 +12,7 @@ function generateLua(appId, title = 'Unknown Game', depots = []) {
   lua += `    name = "${title}",\n`;
   lua += `    depots = {\n`;
   for (const d of depots) {
-    const mid = d.manifestId || 0;
+    const mid = formatManifestId(d.manifestId || 0);
     lua += `        [${d.depotId}] = { manifestid = ${mid} },\n`;
   }
   lua += `    },\n`;

@@ -44,8 +44,27 @@ async function startSteam(steamPath) {
   });
 }
 
-function generateAppManifest(appId) {
-  return `"AppState"\n{\n\t"appid"\t\t"${appId}"\n\t"StateFlags"\t\t"4"\n\t"installdir"\t\t"greed_${appId}"\n\t"SizeOnDisk"\t\t"0"\n\t"StagingSize"\t\t"0"\n}`;
+function generateAppManifest(appId, depots = []) {
+  const buildId = Math.floor(Date.now() / 100);
+  let acf = `"AppState"\n{\n`;
+  acf += `\t"appid"\t\t"${appId}"\n`;
+  acf += `\t"Universe"\t\t"1"\n`;
+  acf += `\t"installdir"\t\t"greed_${appId}"\n`;
+  acf += `\t"StateFlags"\t\t"4"\n`;
+  acf += `\t"buildid"\t\t"${buildId}"\n`;
+  acf += `\t"InstalledDepots"\n\t{\n`;
+  for (const d of depots) {
+    const mid = d.manifestId || Math.floor(Date.now() / 1000);
+    acf += `\t\t"${d.depotId}"\n\t\t{\n`;
+    acf += `\t\t\t"manifestid"\t\t"${mid}"\n`;
+    acf += `\t\t\t"size"\t\t"0"\n`;
+    acf += `\t\t}\n`;
+  }
+  acf += `\t}\n`;
+  acf += `\t"UserConfig"\n\t{\n\t}\n`;
+  acf += `\t"MountedConfig"\n\t{\n\t}\n`;
+  acf += `}`;
+  return acf;
 }
 
 async function getImportedGames(steamAppsPath) {
@@ -80,6 +99,10 @@ async function removeGame(appId, steamAppsPath) {
   if (await fs.pathExists(luaPath)) {
     await fs.remove(luaPath);
     removed = true;
+  }
+  const installDir = path.join(steamAppsPath, 'common', `greed_${appId}`);
+  if (await fs.pathExists(installDir)) {
+    await fs.remove(installDir);
   }
   return removed;
 }

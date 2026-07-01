@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="btn btn-secondary quick-decode" data-id="${appId}" ${state.lastManifestPath ? '' : 'disabled'}>Decode Manifest</button>
       </div>`;
     div.querySelector('.quick-import').onclick = async () => {
-      const r = await window.greed.importToSteam({ appId, luaContent: result.lua });
+      const r = await window.greed.importToSteam({ appId, luaContent: result.lua, depots: result.depots });
       setStatus($('search-status'), r.success ? 'Imported! Steam restarting.' : 'Failed: ' + r.error, r.success ? 'success' : 'error');
     };
     div.querySelector('.quick-export').onclick = async () => {
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const id of ids) {
         const r = batch.results[id];
         if (!r) continue;
-        state.pendingBatchLua[id] = r.lua;
+        state.pendingBatchLua[id] = { lua: r.lua, depots: r.depots };
         html += `<div class="game-card">
           <div class="game-card-img"><img src="https://cdn.steamstatic.com/steam/apps/${id}/header.jpg" onerror="this.parentElement.textContent='No image'" alt=""/></div>
           <div class="game-card-body"><div class="game-card-title">${r.title}</div><div class="game-card-id">App ${id} &bull; ${r.depots.filter(d => d.downloaded).length}/${r.depots.length} depots</div></div>
@@ -352,12 +352,17 @@ document.addEventListener('DOMContentLoaded', () => {
       html += '</div>';
       $('batch-results').innerHTML = html;
       $('batch-results').querySelectorAll('.batch-import-one').forEach(b => {
-        b.addEventListener('click', () => doImport(parseInt(b.dataset.id), state.pendingBatchLua[b.dataset.id]));
+        const id = b.dataset.id;
+        b.addEventListener('click', () => {
+          const data = state.pendingBatchLua[id];
+          if (data) doImport(parseInt(id), data.lua, data.depots);
+        });
       });
       $('batch-results').querySelectorAll('.batch-export-one').forEach(b => {
         b.addEventListener('click', async () => {
           const id = parseInt(b.dataset.id);
-          await window.greed.exportBackup({ appId: id, luaContent: state.pendingBatchLua[id], manifestPaths: [] });
+          const data = state.pendingBatchLua[id];
+          if (data) await window.greed.exportBackup({ appId: id, luaContent: data.lua, manifestPaths: [] });
         });
       });
       $('batch-import-all').disabled = false;
@@ -368,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   $('batch-go').addEventListener('click', processBatchCall);
   $('batch-import-all').addEventListener('click', async () => {
-    const items = Object.entries(state.pendingBatchLua).map(([id, lua]) => ({ appId: parseInt(id), lua }));
+    const items = Object.entries(state.pendingBatchLua).map(([id, data]) => ({ appId: parseInt(id), lua: data.lua, depots: data.depots }));
     if (items.length === 0) return;
     loadingBtn($('batch-import-all'), true);
     const r = await window.greed.importBatch(items);
@@ -377,8 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* IMPORT */
-  async function doImport(appId, lua) {
-    const r = await window.greed.importToSteam({ appId, luaContent: lua });
+  async function doImport(appId, lua, depots) {
+    const r = await window.greed.importToSteam({ appId, luaContent: lua, depots: depots || [] });
     setStatus($('search-status'), r.success ? 'Imported! Steam restarting.' : 'Failed: ' + r.error, r.success ? 'success' : 'error');
   }
 

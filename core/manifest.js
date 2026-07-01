@@ -9,11 +9,11 @@ async function processAppId(appId, steamPath) {
 
   if (!depots) {
     depots = await getDepotInfo(appId);
-    if (depots) await setCache(cacheKey, depots);
+    if (depots && depots.length > 0) await setCache(cacheKey, depots);
   }
 
   if (!depots || depots.length === 0) {
-    depots = [{ depotId: appId + 1, manifestId: Math.floor(Date.now() / 1000) }];
+    depots = [{ depotId: appId, manifestId: Math.floor(Date.now() / 1000) }];
   }
 
   const depotCachePath = getDepotCachePath(steamPath);
