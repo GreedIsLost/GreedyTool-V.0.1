@@ -80,7 +80,6 @@ async function getDepotInfoFromSteamDb(appId) {
     if (depots.length > 0) return depots;
 
     const scriptMatch = html.match(/DepotIds\s*=\s*\[([^\]]+)\]/);
-    const scriptManifestMatch = html.match(/DepotManifests\s*=\s*\[([^\]]+)\]/);
     if (scriptMatch || html.match(/var\s+depotIds\s*=/)) {
       const idMatches = html.match(/(\d+)/g);
       if (idMatches && idMatches.length > 0) {
@@ -106,11 +105,7 @@ async function getDepotInfoFromSteamDb(appId) {
 }
 
 async function getCommonDepotPattern(appId) {
-  const patterns = [
-    appId,
-    appId + 1,
-    0,
-  ];
+  const patterns = [appId, appId + 1];
   const unique = [...new Set(patterns)];
   return unique.map(depotId => ({
     depotId,

@@ -49,7 +49,6 @@ async function launchSam(exePath, appId) {
 }
 
 async function downloadSam() {
-  const pkg = require('../../package.json');
   return {
     url: 'https://github.com/gibbed/SteamAchievementManager/releases/latest',
   };

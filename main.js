@@ -31,11 +31,12 @@ function getMainWindow() {
 
 app.whenReady().then(async () => {
   createWindow();
-  history.load();
+  await history.load();
 
-  require('./core/ipc/steam').register(require('electron').ipcMain);
-  require('./core/ipc/library').register(require('electron').ipcMain, getMainWindow);
-  require('./core/ipc/app').register(require('electron').ipcMain, getMainWindow);
+  const { ipcMain } = require('electron');
+  require('./core/ipc/steam').register(ipcMain);
+  require('./core/ipc/library').register(ipcMain, getMainWindow);
+  require('./core/ipc/app').register(ipcMain, getMainWindow);
 });
 
 app.on('window-all-closed', () => {

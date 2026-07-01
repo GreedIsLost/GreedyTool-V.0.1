@@ -9,6 +9,15 @@ async function exportBackup(appId, luaContent, manifestPaths, outputDir) {
   const output = fs.createWriteStream(outputPath);
   const archive = archiver('zip', { zlib: { level: 9 } });
 
+  const existingManifests = [];
+  if (manifestPaths && manifestPaths.length > 0) {
+    for (const mp of manifestPaths) {
+      if (mp && await fs.pathExists(mp)) {
+        existingManifests.push(mp);
+      }
+    }
+  }
+
   return new Promise((resolve, reject) => {
     output.on('close', () => resolve(outputPath));
     archive.on('error', reject);
@@ -16,12 +25,8 @@ async function exportBackup(appId, luaContent, manifestPaths, outputDir) {
     archive.pipe(output);
     archive.append(luaContent, { name: `${appId}.lua` });
 
-    if (manifestPaths && manifestPaths.length > 0) {
-      for (const mp of manifestPaths) {
-        if (mp && fs.existsSync(mp)) {
-          archive.file(mp, { name: path.basename(mp) });
-        }
-      }
+    for (const mp of existingManifests) {
+      archive.file(mp, { name: path.basename(mp) });
     }
 
     archive.append(generateAppManifest(appId), { name: `appmanifest_${appId}.acf` });

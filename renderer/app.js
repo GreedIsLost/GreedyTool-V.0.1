@@ -118,12 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       $('batch-input').value = ids.join('\n');
       switchView('batch');
-      processBatch();
+      processBatchCall();
     }
   });
   setupDropZone('drop-zone-batch', (ids) => {
     $('batch-input').value = ids.join('\n');
-    processBatch();
+    processBatchCall();
   });
 
   /* LIBRARY */
