@@ -19,7 +19,14 @@
       "output": "dist"
     },
     "extraResources": [
-      { "from": "sam", "to": "sam", "filter": ["**/*", "!sam.zip"] }
+      {
+        "from": "sam",
+        "to": "sam",
+        "filter": [
+          "**/*",
+          "!sam.zip"
+        ]
+      }
     ],
     "files": [
       "main.js",
@@ -57,7 +64,8 @@
     "archiver": "^7.0.0",
     "axios": "^1.7.0",
     "fs-extra": "^11.0.0",
-    "protobufjs": "^7.6.4"
+    "protobufjs": "^7.6.4",
+    "steam-user": "^5.3.0"
   },
   "devDependencies": {
     "electron": "^31.0.0",

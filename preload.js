@@ -27,4 +27,19 @@ contextBridge.exposeInMainWorld('greed', {
   samDetect: () => ipcRenderer.invoke('sam-detect'),
   samLaunch: (data) => ipcRenderer.invoke('sam-launch', data),
   samDownload: () => ipcRenderer.invoke('sam-download'),
+  idlerLogin: (data) => ipcRenderer.invoke('idler-login', data),
+  idlerGuard: (data) => ipcRenderer.invoke('idler-guard', data),
+  idlerStart: (data) => ipcRenderer.invoke('idler-start', data),
+  idlerStop: () => ipcRenderer.invoke('idler-stop'),
+  idlerStatus: () => ipcRenderer.invoke('idler-status'),
+  idlerLogout: () => ipcRenderer.invoke('idler-logout'),
+  onIdlerEvent: (channel, callback) => {
+    const valid = ['idler-status', 'idler-logged-in', 'idler-guard-needed', 'idler-error', 'idler-idling', 'idler-stopped'];
+    if (valid.includes(channel)) {
+      ipcRenderer.on(channel, (_e, data) => callback(data));
+    }
+  },
+  removeIdlerEvent: (channel) => {
+    ipcRenderer.removeAllListeners(channel);
+  },
 });

@@ -508,6 +508,132 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  /* IDLER */
+  let idlerState = { status: 'disconnected' };
+
+  function updateIdlerUI() {
+    const s = idlerState.status;
+    $('idler-login-area').classList.toggle('hidden', s === 'connected' || s === 'idling');
+    $('idler-guard-area').classList.toggle('hidden', s !== 'guard-needed');
+    $('idler-controls').classList.toggle('hidden', s !== 'connected' && s !== 'idling');
+    const sd = $('idler-status-display');
+    if (s === 'idling' && idlerState.currentAppId) {
+      sd.className = 'status-bar success mt-8';
+      sd.textContent = 'Idling App ' + idlerState.currentAppId + ' - accumulating hours...';
+    } else if (s === 'connected') {
+      sd.className = 'status-bar info mt-8';
+      sd.textContent = 'Connected to Steam. Ready to idle.';
+    } else {
+      sd.className = 'status-bar mt-8';
+      sd.textContent = 'Status: ' + s;
+    }
+    $('idler-start-btn').disabled = s !== 'connected';
+    $('idler-stop-btn').disabled = s !== 'idling';
+    if (idlerState.username) {
+      $('idler-user-display').textContent = idlerState.username;
+    }
+  }
+
+  window.greed.onIdlerEvent('idler-status', (data) => {
+    idlerState.status = data.status;
+    updateIdlerUI();
+  });
+
+  window.greed.onIdlerEvent('idler-logged-in', () => {
+    idlerState.status = 'connected';
+    updateIdlerUI();
+  });
+
+  window.greed.onIdlerEvent('idler-guard-needed', (data) => {
+    idlerState.status = 'guard-needed';
+    $('idler-guard-domain').textContent = data.domain || 'email';
+    updateIdlerUI();
+  });
+
+  window.greed.onIdlerEvent('idler-error', (data) => {
+    setStatus($('idler-connection-status'), 'Error: ' + data.error, 'error');
+    idlerState.status = 'disconnected';
+    updateIdlerUI();
+  });
+
+  window.greed.onIdlerEvent('idler-idling', (data) => {
+    idlerState.currentAppId = data.appId;
+    idlerState.status = 'idling';
+    updateIdlerUI();
+  });
+
+  window.greed.onIdlerEvent('idler-stopped', () => {
+    idlerState.currentAppId = null;
+    idlerState.status = 'connected';
+    updateIdlerUI();
+  });
+
+  $('idler-login-btn').addEventListener('click', async () => {
+    const username = $('idler-username').value.trim();
+    const password = $('idler-password').value.trim();
+    if (!username || !password) { setStatus($('idler-connection-status'), 'Enter username and password', 'error'); return; }
+    try {
+      const r = await window.greed.idlerLogin({ username, password });
+      if (r.success) {
+        idlerState.username = username;
+        $('idler-connection-status').classList.add('hidden');
+      } else {
+        setStatus($('idler-connection-status'), 'Login failed: ' + r.error, 'error');
+      }
+    } catch (err) {
+      setStatus($('idler-connection-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
+  $('idler-guard-btn').addEventListener('click', async () => {
+    const code = $('idler-guard-input').value.trim();
+    if (!code) return;
+    try {
+      await window.greed.idlerGuard({ code });
+      $('idler-guard-input').value = '';
+      setStatus($('idler-connection-status'), 'Guard code submitted', 'info');
+    } catch (err) {
+      setStatus($('idler-connection-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
+  $('idler-start-btn').addEventListener('click', async () => {
+    const appId = parseInt($('idler-appid').value.trim());
+    if (!appId) { setStatus($('idler-connection-status'), 'Enter a valid App ID', 'error'); return; }
+    try {
+      const r = await window.greed.idlerStart({ appId });
+      if (r.success) {
+        setStatus($('idler-connection-status'), 'Idling App ' + appId, 'success');
+      } else {
+        setStatus($('idler-connection-status'), 'Failed: ' + r.error, 'error');
+      }
+    } catch (err) {
+      setStatus($('idler-connection-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
+  $('idler-stop-btn').addEventListener('click', async () => {
+    try {
+      const r = await window.greed.idlerStop();
+      if (r.success) {
+        setStatus($('idler-connection-status'), 'Idling stopped', 'info');
+      }
+    } catch (err) {
+      setStatus($('idler-connection-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
+  $('idler-logout-btn').addEventListener('click', async () => {
+    try {
+      await window.greed.idlerLogout();
+      idlerState = { status: 'disconnected' };
+      updateIdlerUI();
+      setStatus($('idler-connection-status'), 'Logged out', 'info');
+    } catch (err) {
+      setStatus($('idler-connection-status'), 'Error: ' + err.message, 'error');
+    }
+  });
+
   /* BUILD BUTTONS */
   function runBuild(target) {
     setStatus($('cache-status'), 'Build started for ' + target + '. Check terminal output.', 'info');

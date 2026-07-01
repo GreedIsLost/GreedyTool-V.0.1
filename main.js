@@ -40,6 +40,7 @@ app.whenReady().then(async () => {
   require('./core/ipc/steam').register(ipcMain);
   require('./core/ipc/library').register(ipcMain, getMainWindow);
   require('./core/ipc/app').register(ipcMain, getMainWindow);
+  require('./core/ipc/idler').register(ipcMain, getMainWindow);
 });
 
 app.on('window-all-closed', () => {
