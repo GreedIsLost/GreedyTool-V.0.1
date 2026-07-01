@@ -12,6 +12,8 @@ A simple, educational Steam tool built with Electron and Node.js for generating 
 - Attempt to download real manifests from Steam CDN
 - Auto import to Steam (Lua + appmanifest)
 - Restart Steam with one click
+- Batch process multiple App IDs
+- Decode .manifest files
 - Clean and modern UI
 
 ---
@@ -28,19 +30,35 @@ A simple, educational Steam tool built with Electron and Node.js for generating 
 ## Installation
 
 ```bash
-cd greed
+cd greedytool
 npm install
 npm start
+```
 
+## Project Structure
 
-
-greed/
+```
+greedytool/
 ├── main.js
 ├── preload.js
 ├── renderer/
 │   ├── index.html
 │   └── app.js
 ├── core/
+│   ├── cache.js
+│   ├── downloader.js
+│   ├── exporter.js
+│   ├── history.js
+│   ├── lua.js
 │   ├── manifest.js
-│   └── lua.js
+│   ├── protobuf.js
+│   ├── steamapi.js
+│   ├── steamkit.js
+│   ├── updater.js
+│   ├── utils.js
+│   └── ipc/
+│       ├── app.js
+│       ├── library.js
+│       └── steam.js
 └── package.json
+```

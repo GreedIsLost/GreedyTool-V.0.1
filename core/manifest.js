@@ -1,53 +1,53 @@
-const axios = require('axios');
-const fs = require('fs-extra');
-const path = require('path');
+const { getDepotCachePath } = require('./utils');
+const { getDepotInfo } = require('./steamkit');
+const { downloadManifest } = require('./downloader');
+const { getCached, setCache } = require('./cache');
 
-async function findSteamPath() {
-  const paths = ['C:\\Program Files (x86)\\Steam', 'D:\\Steam', 'E:\\Steam'];
-  for (const p of paths) {
-    if (await fs.pathExists(path.join(p, 'steam.exe'))) return p;
+async function processAppId(appId, steamPath) {
+  const cacheKey = `depots_${appId}.json`;
+  let depots = await getCached(cacheKey);
+
+  if (!depots) {
+    depots = await getDepotInfo(appId);
+    if (depots) await setCache(cacheKey, depots);
   }
-  return 'C:\\Program Files (x86)\\Steam';
-}
 
-async function getRealManifestInfo(appId) {
-  try {
-    const res = await axios.get(`https://steamdb.info/app/${appId}/depots/`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      timeout: 10000
+  if (!depots || depots.length === 0) {
+    depots = [{ depotId: appId + 1, manifestId: Math.floor(Date.now() / 1000) }];
+  }
+
+  const depotCachePath = getDepotCachePath(steamPath);
+  const results = [];
+  for (const depot of depots) {
+    const dl = await downloadManifest(depot.depotId, depot.manifestId, depotCachePath);
+    results.push({
+      depotId: depot.depotId,
+      manifestId: depot.manifestId,
+      downloaded: dl.success,
+      path: dl.path,
+      cached: dl.cached || false,
     });
-
-    const html = res.data;
-    const depotMatch = html.match(/depot\/(\d+)/) || [null, appId + 1];
-    const manifestMatch = html.match(/manifestid["'\s:]+(\d+)/i) || [null, Math.floor(Date.now() / 1000)];
-
-    return {
-      depotId: parseInt(depotMatch[1]),
-      manifestId: parseInt(manifestMatch[1])
-    };
-  } catch (e) {
-    return { depotId: appId + 1, manifestId: Math.floor(Date.now() / 1000) };
   }
+  return results;
 }
 
-async function downloadWithAppId(appId) {
-  const steamPath = await findSteamPath();
-  const depotCache = path.join(steamPath, 'depotcache');
-  await fs.ensureDir(depotCache);
-
-  const info = await getRealManifestInfo(appId);
-
-  const url = `https://cdn.cloudflare.steamstatic.com/depot/${info.depotId}/manifest/${info.manifestId}/manifest.crc`;
-
-  try {
-    const response = await axios.get(url, { responseType: 'arraybuffer' });
-    const manifestPath = path.join(depotCache, `${info.depotId}_${info.manifestId}.manifest`);
-    await fs.writeFile(manifestPath, response.data);
-
-    return { success: true, depotId: info.depotId, manifestId: info.manifestId, manifestPath };
-  } catch (err) {
-    return { success: true, depotId: info.depotId, manifestId: info.manifestId, manifestPath: null };
+async function processBatch(appIds, steamPath, concurrency = 3) {
+  const results = {};
+  const queue = [...appIds];
+  async function worker() {
+    while (queue.length > 0) {
+      const appId = queue.shift();
+      try {
+        results[appId] = await processAppId(appId, steamPath);
+      } catch (err) {
+        console.error(`processBatch error for ${appId}:`, err);
+        results[appId] = [];
+      }
+    }
   }
+  const workers = Array(Math.min(concurrency, appIds.length)).fill().map(() => worker());
+  await Promise.allSettled(workers);
+  return results;
 }
 
-module.exports = { downloadWithAppId };
+module.exports = { processAppId, processBatch };

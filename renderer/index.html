@@ -2,78 +2,395 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Greed - Steam Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greed</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-primary: #1b2838;
+      --bg-secondary: #171a21;
+      --bg-panel: #1e2d3d;
+      --bg-hover: #2a475e;
+      --bg-input: #2a3f4f;
+      --accent: #66c0f4;
+      --accent-green: #a4d007;
+      --accent-orange: #f0a020;
+      --text-primary: #d6e0e8;
+      --text-secondary: #8091a3;
+      --text-muted: #4d5e70;
+      --border: #30485c;
+      --danger: #e04a4a;
+      --success: #4caf50;
+      --font: 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    html, body { height: 100%; }
     body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #1e1e2e, #2a2a40);
-      color: #fff;
-      margin: 0;
-      padding: 20px;
+      font-family: var(--font);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: rgba(0,0,0,0.4);
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
     }
-    h1 {
-      text-align: center;
-      color: #00ff9d;
-      margin-bottom: 30px;
+    .header-logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+    .header-logo span { color: var(--text-secondary); font-weight: 400; }
+    .header-nav { display: flex; gap: 4px; -webkit-app-region: no-drag; }
+    .header-nav button {
+      background: none; border: none; color: var(--text-secondary);
+      padding: 12px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--font);
     }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      background: #333;
-      border: 1px solid #555;
-      border-radius: 6px;
-      color: white;
-      font-size: 16px;
+    .header-nav button:hover { color: var(--text-primary); }
+    .header-nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; -webkit-app-region: no-drag; }
+    .update-badge { font-size: 11px; background: var(--accent-green); color: #111; padding: 2px 10px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+    .update-badge:hover { background: #b8e04a; }
+
+    .body { display: flex; flex: 1; overflow: hidden; }
+
+    .sidebar {
+      width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border);
+      padding: 12px 0; display: flex; flex-direction: column; flex-shrink: 0;
     }
-    button {
-      background: #00ff9d;
-      color: black;
-      border: none;
-      padding: 14px 24px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin: 10px 5px;
+    .sidebar-section { padding: 8px 16px 4px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 16px;
+      color: var(--text-secondary); cursor: pointer; font-size: 13px;
+      border-left: 3px solid transparent; transition: all 0.12s;
     }
-    button:hover {
-      background: #00cc7a;
+    .sidebar-item:hover { background: var(--bg-panel); color: var(--text-primary); }
+    .sidebar-item.active { background: var(--bg-panel); color: var(--accent); border-left-color: var(--accent); }
+    .sidebar-item .icon { width: 20px; text-align: center; font-size: 15px; }
+    .sidebar-spacer { flex: 1; }
+    .sidebar-status { padding: 12px 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); }
+
+    .main { flex: 1; overflow-y: auto; padding: 24px; position: relative; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .page-subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+
+    .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+    .search-bar input {
+      flex: 1; padding: 10px 14px; background: var(--bg-input);
+      border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary);
+      font-size: 14px; font-family: var(--font);
     }
-    pre {
-      background: #1a1a2e;
-      padding: 15px;
-      border-radius: 8px;
-      overflow-x: auto;
-      max-height: 300px;
+    .search-bar input:focus { outline: none; border-color: var(--accent); }
+    .search-bar input::placeholder { color: var(--text-muted); }
+
+    .btn {
+      padding: 8px 18px; border: none; border-radius: 3px; font-size: 13px;
+      font-weight: 500; cursor: pointer; transition: all 0.12s; font-family: var(--font);
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
     }
-    #status {
-      margin: 15px 0;
-      padding: 12px;
-      border-radius: 6px;
-      font-weight: bold;
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(180deg, #66c0f4 0%, #4b9fd4 100%); color: #111; }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #7ecbf5 0%, #5aaddb 100%); }
+    .btn-green { background: linear-gradient(180deg, #a4d007 0%, #8abb06 100%); color: #111; }
+    .btn-green:hover:not(:disabled) { background: linear-gradient(180deg, #b8e04a 0%, #9acf10 100%); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #e86a6a; }
+    .btn-secondary { background: var(--bg-hover); color: var(--text-primary); }
+    .btn-secondary:hover:not(:disabled) { background: #3a5a6e; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-icon { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; }
+    .btn-icon:hover { color: var(--text-primary); }
+
+    .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px; margin-bottom: 12px; }
+    .card-header { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--accent); }
+
+    .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .game-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; transition: border 0.15s; cursor: pointer; }
+    .game-card:hover { border-color: var(--accent); }
+    .game-card-img { width: 100%; height: 130px; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 12px; overflow: hidden; }
+    .game-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .game-card-body { padding: 10px 14px; }
+    .game-card-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .game-card-id { font-size: 12px; color: var(--text-muted); }
+    .game-card-actions { padding: 8px 14px; border-top: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .search-result {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px;
+      margin-bottom: 6px; cursor: pointer; transition: border 0.12s;
     }
+    .search-result:hover { border-color: var(--accent); }
+    .search-result-img { width: 40px; height: 40px; border-radius: 4px; background: var(--bg-secondary); flex-shrink: 0; overflow: hidden; }
+    .search-result-img img { width: 100%; height: 100%; object-fit: cover; }
+    .search-result-info { flex: 1; }
+    .search-result-name { font-size: 14px; font-weight: 500; }
+    .search-result-id { font-size: 11px; color: var(--text-muted); }
+
+    .history-item {
+      display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px;
+      margin-bottom: 4px; cursor: pointer; transition: border 0.12s;
+    }
+    .history-item:hover { border-color: var(--accent); }
+    .history-item .app-id { color: var(--accent); font-weight: 600; min-width: 60px; }
+    .history-item .app-title { flex: 1; }
+    .history-item .app-date { color: var(--text-muted); font-size: 11px; }
+
+    .depot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; margin: 10px 0; }
+    .depot-chip { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 3px; padding: 6px 10px; font-size: 12px; }
+    .depot-chip .label { color: var(--text-muted); }
+    .depot-chip .val { color: var(--text-primary); font-weight: 500; }
+    .depot-chip .ok { color: var(--accent-green); }
+    .depot-chip .no { color: var(--danger); }
+    .depot-chip .cached { color: var(--accent-orange); }
+
+    .status-bar { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; padding: 10px 14px; margin: 12px 0; font-size: 13px; min-height: 20px; }
+    .status-bar.info { border-left: 3px solid var(--accent); }
+    .status-bar.success { border-left: 3px solid var(--accent-green); }
+    .status-bar.error { border-left: 3px solid var(--danger); }
+
+    input, textarea, select {
+      background: var(--bg-input); border: 1px solid var(--border); border-radius: 3px;
+      color: var(--text-primary); padding: 8px 12px; font-size: 13px; font-family: var(--font);
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 60px; }
+    label { font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.15); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .setting-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .setting-row label { margin: 0; min-width: 140px; }
+
+    .batch-area { width: 100%; min-height: 80px; margin-bottom: 10px; }
+    .batch-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+
+    .hidden { display: none !important; }
+    .mt-8 { margin-top: 8px; }
+    .mb-8 { margin-bottom: 8px; }
+    .flex { display: flex; }
+    .gap-8 { gap: 8px; }
+    .gap-4 { gap: 4px; }
+    .items-center { align-items: center; }
+    .text-muted { color: var(--text-muted); }
+    .text-accent { color: var(--accent); }
+
+    /* DROP ZONE */
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: 8px; padding: 30px;
+      text-align: center; color: var(--text-muted); font-size: 14px;
+      transition: all 0.2s; margin-bottom: 16px;
+    }
+    .drop-zone.drag-over { border-color: var(--accent); background: rgba(102, 192, 244, 0.08); color: var(--accent); }
+
+    /* APP INFO PANEL */
+    .app-info-panel { display: flex; gap: 16px; margin-bottom: 16px; }
+    .app-info-panel img { width: 200px; height: 94px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+    .app-info-body { flex: 1; }
+    .app-info-body h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .app-info-details { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    .app-info-details strong { color: var(--text-primary); }
+    .app-info-desc { font-size: 12px; color: var(--text-secondary); margin-top: 8px; max-height: 60px; overflow-y: auto; line-height: 1.5; }
+
+    /* SCREENSHOTS */
+    .screenshot-strip { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; }
+    .screenshot-strip img { height: 80px; border-radius: 3px; cursor: pointer; transition: transform 0.12s; }
+    .screenshot-strip img:hover { transform: scale(1.05); }
+
+    /* MANIFEST VIEWER */
+    .manifest-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .manifest-table th { text-align: left; color: var(--text-muted); padding: 4px 8px; border-bottom: 1px solid var(--border); }
+    .manifest-table td { padding: 3px 8px; border-bottom: 1px solid rgba(48, 72, 92, 0.4); }
+    .manifest-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+    /* TABS */
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+    .tab-bar button {
+      background: none; border: none; color: var(--text-secondary); padding: 8px 16px;
+      font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent;
+      font-family: var(--font); transition: all 0.12s;
+    }
+    .tab-bar button:hover { color: var(--text-primary); }
+    .tab-bar button.active { color: var(--accent); border-bottom-color: var(--accent); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🟢 Greed</h1>
-    <p style="text-align:center; color:#aaa;">Steam Manifest & Lua Tool</p>
+  <div class="header">
+    <div class="header-logo">GREED <span>// steam tool</span></div>
+    <div class="header-nav">
+      <button class="active" data-page="library">Library</button>
+      <button data-page="search">Search</button>
+      <button data-page="batch">Batch</button>
+      <button data-page="tools">Tools</button>
+      <button data-page="settings">Settings</button>
+    </div>
+    <div class="header-right">
+      <span id="update-badge" class="update-badge hidden">Update available</span>
+    </div>
+  </div>
 
-    <input type="text" id="appid" placeholder="Enter Steam App ID (e.g. 730)" />
-    <input type="text" id="title" placeholder="Game Title (optional)" />
+  <div class="body">
+    <div class="sidebar">
+      <div class="sidebar-section">Quick Actions</div>
+      <div class="sidebar-item active" data-view="library"><span class="icon">&#9733;</span> My Library</div>
+      <div class="sidebar-item" data-view="search"><span class="icon">&#9740;</span> Search Games</div>
+      <div class="sidebar-item" data-view="history"><span class="icon">&#8635;</span> History</div>
+      <div class="sidebar-item" data-view="tools"><span class="icon">&#9881;</span> Tools</div>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-item" data-view="settings"><span class="icon">&#9881;</span> Settings</div>
+      <div class="sidebar-status" id="sidebar-status">Steam: checking...</div>
+    </div>
 
-    <button id="generate">Generate & Download</button>
+    <div class="main">
+      <!-- LIBRARY -->
+      <div id="page-library" class="page active">
+        <div class="page-title">My Library</div>
+        <div class="page-subtitle">Games imported via Greed</div>
+        <div id="library-grid" class="game-grid"></div>
+        <div id="library-empty" class="card text-muted" style="text-align:center;padding:40px;">No imported games yet. Use Search or enter an App ID.</div>
+        <div id="library-status" class="status-bar info hidden"></div>
+      </div>
 
-    <div id="status"></div>
-    <pre id="output"></pre>
+      <!-- SEARCH -->
+      <div id="page-search" class="page">
+        <div class="page-title">Search Games</div>
+        <div class="page-subtitle">Find a game by name on Steam</div>
+
+        <div class="drop-zone" id="drop-zone">Drop App IDs here, or search below</div>
+
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="Search for a game..." />
+          <button id="search-btn" class="btn btn-primary">Search</button>
+        </div>
+        <div id="search-results"></div>
+        <div id="search-status" class="status-bar info hidden"></div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header">Or enter an App ID directly</div>
+          <div class="flex gap-8 items-center" style="flex-wrap:wrap;">
+            <input type="text" id="quick-appid" placeholder="e.g. 730" style="width:120px;" />
+            <input type="text" id="quick-title" placeholder="Game title (optional)" style="flex:1;min-width:120px;" />
+            <button id="quick-go" class="btn btn-green">Go</button>
+          </div>
+          <div id="quick-result" class="mt-8"></div>
+        </div>
+      </div>
+
+      <!-- BATCH -->
+      <div id="page-batch" class="page">
+        <div class="page-title">Batch Process</div>
+        <div class="page-subtitle">Process multiple App IDs at once</div>
+        <div class="drop-zone" id="drop-zone-batch">Drop a list of App IDs here</div>
+        <textarea id="batch-input" class="batch-area" placeholder="Enter App IDs, one per line or comma-separated&#10;e.g.&#10;730&#10;480&#10;570"></textarea>
+        <div class="flex gap-8 items-center">
+          <button id="batch-go" class="btn btn-green">Process All</button>
+          <button id="batch-import-all" class="btn btn-primary" disabled>Import All to Steam</button>
+          <span id="batch-count" class="text-muted"></span>
+        </div>
+        <div id="batch-results" class="mt-8"></div>
+        <div id="batch-status" class="status-bar info hidden mt-8"></div>
+      </div>
+
+      <!-- TOOLS -->
+      <div id="page-tools" class="page">
+        <div class="page-title">Tools</div>
+        <div class="page-subtitle">Manifest decoder, cache management, and more</div>
+
+        <div class="tab-bar" id="tools-tabs">
+          <button class="active" data-tooltab="decoder">Manifest Decoder</button>
+          <button data-tooltab="cache">Cache</button>
+          <button data-tooltab="build">Build</button>
+        </div>
+
+        <!-- MANIFEST DECODER -->
+        <div id="tooltab-decoder" class="card">
+          <div class="card-header">Decode Steam .manifest files</div>
+          <p class="text-muted" style="font-size:13px;margin-bottom:10px;">
+            Select a downloaded .manifest file to decode its contents (files, sizes, directories).
+          </p>
+          <button id="manifest-pick" class="btn btn-primary btn-sm">Pick a .manifest file</button>
+          <button id="manifest-decode-last" class="btn btn-secondary btn-sm hidden">Decode last downloaded</button>
+          <div id="manifest-output" class="mt-8"></div>
+        </div>
+
+        <!-- CACHE -->
+        <div id="tooltab-cache" class="card hidden">
+          <div class="card-header">Offline Cache</div>
+          <div id="cache-stats" class="text-muted" style="font-size:13px;">Loading...</div>
+          <button id="cache-clear" class="btn btn-danger btn-sm mt-8">Clear Cache</button>
+          <div id="cache-status" class="status-bar info hidden mt-8"></div>
+        </div>
+
+        <!-- BUILD / DISTRIBUTE -->
+        <div id="tooltab-build" class="card hidden">
+          <div class="card-header">Standalone Build</div>
+          <p class="text-muted" style="font-size:13px;margin-bottom:10px;">
+            Package Greed as a standalone executable (no Node.js required).
+          </p>
+          <div class="flex gap-8" style="flex-wrap:wrap;">
+            <button id="build-linux" class="btn btn-secondary btn-sm">Build for Linux</button>
+            <button id="build-win" class="btn btn-secondary btn-sm">Build for Windows</button>
+            <button id="build-mac" class="btn btn-secondary btn-sm">Build for macOS</button>
+          </div>
+          <div class="text-muted mt-8" style="font-size:12px;">
+            Builds are output to the <code>dist/</code> folder. Requires npm run build.
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+        <div class="page-title">Settings</div>
+        <div class="page-subtitle">Configure Greed</div>
+        <div class="card">
+          <div class="card-header">Steam Installation</div>
+          <div class="setting-row">
+            <label>Steam folder:</label>
+            <input type="text" id="settings-steam-path" placeholder="Auto-detect" style="flex:1;" />
+            <button id="settings-browse" class="btn btn-secondary btn-sm">Browse</button>
+          </div>
+          <button id="settings-save" class="btn btn-primary btn-sm mt-8">Save</button>
+          <span id="settings-status" class="text-muted" style="margin-left:10px;font-size:12px;"></span>
+        </div>
+        <div class="card">
+          <div class="card-header">History</div>
+          <button id="settings-clear-history" class="btn btn-secondary btn-sm">Clear History</button>
+        </div>
+        <div class="card">
+          <div class="card-header">About</div>
+          <div class="text-muted" style="font-size:13px;">
+            Greed v<span id="about-version">2.1.0</span>
+            <br/>Steam Manifest &amp; Lua Tool
+            <br/><span id="about-update" style="color:var(--accent);cursor:pointer;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL OVERLAY -->
+  <div id="detail-overlay" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;width:560px;max-height:80vh;overflow-y:auto;padding:24px;">
+      <div class="flex items-center" style="justify-content:space-between;margin-bottom:16px;">
+        <h2 id="detail-title" style="font-size:18px;"></h2>
+        <button id="detail-close" class="btn btn-icon" style="font-size:20px;">&times;</button>
+      </div>
+      <div id="detail-content"></div>
+    </div>
   </div>
 
   <script src="app.js"></script>

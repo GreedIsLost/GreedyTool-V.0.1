@@ -1,0 +1,7 @@
+node_modules/
+dist/
+greed-cache/
+greed-history.json
+*.log
+.DS_Store
+Thumbs.db

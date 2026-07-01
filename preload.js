@@ -1,7 +1,26 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('greed', {
+  processApp: (appId) => ipcRenderer.invoke('process-app', appId),
+  processBatch: (appIds) => ipcRenderer.invoke('process-batch', appIds),
   generateLua: (data) => ipcRenderer.invoke('generate-lua', data),
-  downloadWithAppId: (appId) => ipcRenderer.invoke('download-with-appid', appId),
-  importToSteam: (data) => ipcRenderer.invoke('import-to-steam', data)
+  importToSteam: (data) => ipcRenderer.invoke('import-to-steam', data),
+  importBatch: (items) => ipcRenderer.invoke('import-batch', items),
+  searchGame: (query) => ipcRenderer.invoke('search-game', query),
+  getAppDetails: (appId) => ipcRenderer.invoke('get-app-details', appId),
+  decodeManifest: (filePath) => ipcRenderer.invoke('decode-manifest', filePath),
+  exportBackup: (data) => ipcRenderer.invoke('export-backup', data),
+  checkUpdate: () => ipcRenderer.invoke('check-update'),
+  getHistory: () => ipcRenderer.invoke('get-history'),
+  clearHistory: () => ipcRenderer.invoke('clear-history'),
+  getImported: () => ipcRenderer.invoke('get-imported'),
+  removeGame: (appId) => ipcRenderer.invoke('remove-game', appId),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  saveSettings: (s) => ipcRenderer.invoke('save-settings', s),
+  pickFolder: () => ipcRenderer.invoke('pick-folder'),
+  verifyImport: (appId) => ipcRenderer.invoke('verify-import', appId),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  getCacheStats: () => ipcRenderer.invoke('get-cache-stats'),
+  clearCache: () => ipcRenderer.invoke('clear-cache'),
+  pickManifestFile: () => ipcRenderer.invoke('pick-manifest-file'),
 });
