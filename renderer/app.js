@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn || !btn.dataset.tooltab) return;
     $('tools-tabs').querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    ['decoder', 'sam', 'cache', 'build'].forEach(id => {
+    ['decoder', 'sam', 'idler', 'cache', 'build'].forEach(id => {
       const el = $('tooltab-' + id);
       if (el) el.classList.toggle('hidden', id !== btn.dataset.tooltab);
     });
