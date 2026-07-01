@@ -10,7 +10,6 @@ contextBridge.exposeInMainWorld('greed', {
   getAppDetails: (appId) => ipcRenderer.invoke('get-app-details', appId),
   decodeManifest: (filePath) => ipcRenderer.invoke('decode-manifest', filePath),
   exportBackup: (data) => ipcRenderer.invoke('export-backup', data),
-  checkUpdate: () => ipcRenderer.invoke('check-update'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   clearHistory: () => ipcRenderer.invoke('clear-history'),
   getImported: () => ipcRenderer.invoke('get-imported'),
@@ -40,6 +39,18 @@ contextBridge.exposeInMainWorld('greed', {
     }
   },
   removeIdlerEvent: (channel) => {
+    ipcRenderer.removeAllListeners(channel);
+  },
+  updateCheck: () => ipcRenderer.invoke('update-check'),
+  updateDownload: () => ipcRenderer.invoke('update-download'),
+  updateInstall: () => ipcRenderer.invoke('update-install'),
+  onUpdateEvent: (channel, callback) => {
+    const valid = ['update-checking', 'update-available', 'update-not-available', 'update-error', 'update-progress', 'update-downloaded'];
+    if (valid.includes(channel)) {
+      ipcRenderer.on(channel, (_e, data) => callback(data));
+    }
+  },
+  removeUpdateEvent: (channel) => {
     ipcRenderer.removeAllListeners(channel);
   },
 });

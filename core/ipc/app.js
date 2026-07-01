@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs-extra');
 const { decodeManifest, formatManifestSummary } = require('../protobuf');
-const { checkForUpdate } = require('../updater');
+
 const history = require('../history');
 const { clearCache, getCacheStats } = require('../cache');
 const { detectSam, launchSam, downloadSam } = require('../sam');
@@ -15,16 +15,6 @@ function register(ipcMain, getMainWindow) {
       return { success: true, summary };
     } catch (err) {
       return { success: false, error: err.message };
-    }
-  });
-
-  ipcMain.handle('check-update', async () => {
-    try {
-      const pkg = require('../../package.json');
-      return await checkForUpdate(pkg.version);
-    } catch (err) {
-      console.error('check-update error:', err);
-      return { hasUpdate: false, error: err.message };
     }
   });
 

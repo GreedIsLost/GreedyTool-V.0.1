@@ -77,23 +77,47 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   updateSidebarStatus();
 
-  /* UPDATE CHECK */
-  (async () => {
-    try {
-      const update = await window.greed.checkUpdate();
-      const badge = $('update-badge');
-      if (update.hasUpdate) {
-        badge.classList.remove('hidden');
-        badge.textContent = 'v' + update.latestVersion + ' available';
-        badge.onclick = () => { if (update.url) window.greed.openExternal(update.url); };
-      }
-      const aboutUpdate = $('about-update');
-      if (update.hasUpdate) {
-        aboutUpdate.textContent = 'Update v' + update.latestVersion + ' available';
-        aboutUpdate.onclick = () => { if (update.url) window.greed.openExternal(update.url); };
-      }
-    } catch (err) { console.error('update check error:', err); }
-  })();
+  /* AUTO-UPDATE */
+  let updateInfo = null;
+
+  window.greed.onUpdateEvent('update-checking', () => {
+    $('update-badge').textContent = 'Checking...';
+    $('update-badge').classList.remove('hidden');
+  });
+
+  window.greed.onUpdateEvent('update-available', (data) => {
+    updateInfo = data;
+    $('update-badge').textContent = 'v' + data.version + ' — Download';
+    $('update-badge').classList.remove('hidden');
+    $('update-badge').onclick = () => window.greed.updateDownload();
+    const about = $('about-update');
+    about.textContent = 'Update v' + data.version + ' available — click to download';
+    about.onclick = () => window.greed.updateDownload();
+  });
+
+  window.greed.onUpdateEvent('update-not-available', () => {
+    $('update-badge').classList.add('hidden');
+  });
+
+  window.greed.onUpdateEvent('update-error', (data) => {
+    console.error('Update error:', data.error);
+    $('update-badge').classList.add('hidden');
+  });
+
+  window.greed.onUpdateEvent('update-progress', (data) => {
+    const pct = Math.round(data.percent);
+    $('update-badge').textContent = 'Downloading ' + pct + '%';
+    const about = $('about-update');
+    about.textContent = 'Downloading update... ' + pct + '%';
+  });
+
+  window.greed.onUpdateEvent('update-downloaded', () => {
+    $('update-badge').textContent = 'Install & Restart';
+    $('update-badge').onclick = () => window.greed.updateInstall();
+    const about = $('about-update');
+    about.textContent = 'Update ready — click to install & restart';
+    about.onclick = () => window.greed.updateInstall();
+  });
 
   /* DRAG & DROP */
   function setupDropZone(zoneId, callback) {
