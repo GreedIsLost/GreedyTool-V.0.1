@@ -584,11 +584,20 @@ document.addEventListener('DOMContentLoaded', () => {
   window.greed.onIdlerEvent('idler-status', (data) => {
     idlerState.status = data.status;
     updateIdlerUI();
+    if (data.status === 'disconnected') {
+      $('friends-panel').classList.add('hidden');
+    }
   });
 
-  window.greed.onIdlerEvent('idler-logged-in', () => {
+  window.greed.onIdlerEvent('idler-logged-in', async () => {
     idlerState.status = 'connected';
     updateIdlerUI();
+    const r = await window.greed.friendsStart();
+    if (r.success) {
+      $('friends-panel').classList.remove('hidden');
+    } else {
+      console.error('friends start error:', r.error);
+    }
   });
 
   window.greed.onIdlerEvent('idler-guard-needed', (data) => {
@@ -675,6 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('idler-logout-btn').addEventListener('click', async () => {
     try {
+      await window.greed.friendsStop();
+      $('friends-panel').classList.add('hidden');
       await window.greed.idlerLogout();
       idlerState = { status: 'disconnected' };
       updateIdlerUI();
@@ -682,6 +693,41 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       setStatus($('idler-connection-status'), 'Error: ' + err.message, 'error');
     }
+  });
+
+  /* FRIENDS */
+  function renderFriends(data) {
+    const list = $('friends-list');
+    const count = $('friends-count');
+    if (!list || !count) return;
+    count.textContent = '(' + data.count + ' online)';
+    if (!data.friends || data.friends.length === 0) {
+      list.innerHTML = '<div class="text-muted" style="font-size:12px;padding:8px;">No friends online.</div>';
+      return;
+    }
+    let html = '';
+    for (const f of data.friends) {
+      if (f.state === 0) continue;
+      const stateClass = f.state === 1 ? 'online' : f.state === 2 ? 'busy' : f.state === 3 ? 'away' : f.state === 4 ? 'snooze' : f.state === 5 ? 'trade' : f.state === 6 ? 'play' : '';
+      const avatar = f.avatarUrl ? `<img src="${f.avatarUrl}" alt=""/>` : '';
+      html += `<div class="friend-item">
+        <div class="friend-avatar">${avatar}</div>
+        <div class="friend-info">
+          <div class="friend-name">${f.name}</div>
+          ${f.gameName ? '<div class="friend-game">' + f.gameName + '</div>' : ''}
+        </div>
+        <div class="friend-state ${stateClass}">${f.stateLabel}</div>
+      </div>`;
+    }
+    list.innerHTML = html || '<div class="text-muted" style="font-size:12px;padding:8px;">No friends online.</div>';
+    $('friends-status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+  }
+
+  window.greed.onFriendsEvent('friends-update', renderFriends);
+
+  window.greed.onFriendsEvent('friends-error', (data) => {
+    console.error('friends error:', data.error);
+    $('friends-status').textContent = 'Error: ' + data.error;
   });
 
   /* BUILD BUTTONS */

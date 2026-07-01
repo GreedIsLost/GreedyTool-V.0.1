@@ -179,8 +179,28 @@
     .batch-area { width: 100%; min-height: 80px; margin-bottom: 10px; }
     .batch-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
 
+    .friend-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px;
+      margin-bottom: 4px; transition: border 0.12s;
+    }
+    .friend-item:hover { border-color: var(--accent); }
+    .friend-avatar { width: 32px; height: 32px; border-radius: 3px; background: var(--bg-secondary); flex-shrink: 0; }
+    .friend-avatar img { width: 32px; height: 32px; border-radius: 3px; display: block; }
+    .friend-info { flex: 1; min-width: 0; }
+    .friend-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .friend-game { font-size: 11px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .friend-state { font-size: 10px; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+    .friend-state.online { background: #2e7d32; color: #fff; }
+    .friend-state.away { background: #795548; color: #fff; }
+    .friend-state.busy { background: #c62828; color: #fff; }
+    .friend-state.snooze { background: #5d4037; color: #fff; }
+    .friend-state.trade { background: #1565c0; color: #fff; }
+    .friend-state.play { background: #6a1b9a; color: #fff; }
+
     .hidden { display: none !important; }
     .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
     .mb-8 { margin-bottom: 8px; }
     .flex { display: flex; }
     .gap-8 { gap: 8px; }
@@ -352,6 +372,12 @@
             </div>
           </div>
           <div id="idler-connection-status" class="status-bar info hidden mt-8"></div>
+
+          <div id="friends-panel" class="hidden mt-16">
+            <div class="card-header" style="font-size:14px;">Friends <span id="friends-count" class="text-muted" style="font-size:12px;"></span></div>
+            <div id="friends-list" class="mt-8" style="max-height:300px;overflow-y:auto;"></div>
+            <div id="friends-status" class="text-muted" style="font-size:12px;margin-top:6px;"></div>
+          </div>
         </div>
 
         <!-- SAM -->

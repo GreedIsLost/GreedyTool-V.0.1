@@ -53,4 +53,16 @@ contextBridge.exposeInMainWorld('greed', {
   removeUpdateEvent: (channel) => {
     ipcRenderer.removeAllListeners(channel);
   },
+  friendsStart: () => ipcRenderer.invoke('friends-start'),
+  friendsStop: () => ipcRenderer.invoke('friends-stop'),
+  friendsList: () => ipcRenderer.invoke('friends-list'),
+  onFriendsEvent: (channel, callback) => {
+    const valid = ['friends-update', 'friends-error'];
+    if (valid.includes(channel)) {
+      ipcRenderer.on(channel, (_e, data) => callback(data));
+    }
+  },
+  removeFriendsEvent: (channel) => {
+    ipcRenderer.removeAllListeners(channel);
+  },
 });

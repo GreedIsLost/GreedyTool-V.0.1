@@ -1,7 +1,9 @@
 const SteamIdler = require('../idler');
 
+let idler;
+
 function register(ipcMain, getMainWindow) {
-  const idler = new SteamIdler();
+  idler = new SteamIdler();
 
   function send(event, data) {
     const w = getMainWindow();
@@ -67,4 +69,4 @@ function register(ipcMain, getMainWindow) {
   });
 }
 
-module.exports = { register };
+module.exports = { register, getIdler: () => idler };

@@ -57,6 +57,7 @@ app.whenReady().then(async () => {
   require('./core/ipc/library').register(ipcMain, getMainWindow);
   require('./core/ipc/app').register(ipcMain, getMainWindow);
   require('./core/ipc/idler').register(ipcMain, getMainWindow);
+  require('./core/ipc/friends').register(ipcMain, getMainWindow);
 
   if (process.env.NODE_ENV !== 'development') {
     autoUpdater.checkForUpdates().catch(() => {});

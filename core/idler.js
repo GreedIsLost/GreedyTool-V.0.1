@@ -112,6 +112,10 @@ class SteamIdler extends EventEmitter {
     this.emit('status', this.status);
   }
 
+  getClient() {
+    return this.client;
+  }
+
   getState() {
     return {
       status: this.status,
