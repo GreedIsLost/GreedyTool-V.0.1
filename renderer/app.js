@@ -66,9 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.sidebar-item[data-view]').forEach(el => {
     el.addEventListener('click', () => switchView(el.dataset.view));
   });
-  document.querySelectorAll('.header-nav button[data-page]').forEach(el => {
+  document.querySelectorAll('.nav-bar button[data-page]').forEach(el => {
     el.addEventListener('click', () => {
-      document.querySelectorAll('.header-nav button[data-page]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.nav-bar button[data-page]').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       switchView(el.dataset.page);
     });
