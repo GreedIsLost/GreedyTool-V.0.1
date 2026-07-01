@@ -20,7 +20,7 @@ A sleek Electron-powered tool for generating Lua manifests, downloading Steam de
 | **Import to Steam** | Auto-import Lua + appmanifest + restart Steam |
 | **Batch Processing** | Queue up multiple App IDs with concurrency control |
 | **Manifest Decoder** | Decode `.manifest` files for inspection |
-| **SAM Integration** | Detect, download, and launch Steam Achievement Manager |
+| **SAM Integration** | Bundled via `npm install` — auto-detect, launch Steam Achievement Manager with current App ID |
 | **Backup Export** | Package manifests + Lua into a `.zip` |
 | **Drag & Drop** | Drop Steam store links or raw App IDs |
 
@@ -31,7 +31,7 @@ A sleek Electron-powered tool for generating Lua manifests, downloading Steam de
 ```bash
 git clone https://github.com/GreedIsLost/GreedyTool-V.0.1.git
 cd GreedyTool-V.0.1
-npm install
+npm install    # also downloads SAM.Picker.exe into sam/
 npm start
 ```
 
@@ -70,6 +70,7 @@ GreedyTool/
 |   +-- manifest.js      # Orchestrator (process-app / process-batch)
 |   +-- protobuf.js      # Steam protobuf decoder
 |   +-- sam.js           # SAM auto-detect & launcher
+|   +-- setup-sam.js     # Postinstall downloader for SAM.Picker.exe
 |   +-- steamapi.js      # Steam Store API client
 |   +-- steamkit.js      # Depot info (API -> SteamDB -> fallback)
 |   +-- updater.js       # Self-updater
@@ -79,6 +80,9 @@ GreedyTool/
 |       +-- library.js   # Import to Steam
 |       +-- steam.js     # Process, search, details
 +-- package.json
++-- sam/
+|   +-- SAM.Picker.exe   # (downloaded by postinstall)
+|   +-- .gitkeep
 ```
 
 ---
