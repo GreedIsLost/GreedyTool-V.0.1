@@ -1,0 +1,16 @@
+{
+  "name": "greed",
+  "version": "1.0.0",
+  "description": "Custom Steam Manifest & Lua Tool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "electron": "^31.0.0",
+    "electron-store": "^8.1.0",
+    "fs-extra": "^11.0.0",
+    "protobufjs": "^7.0.0"
+  }
+}
