@@ -24,9 +24,9 @@ class FriendsWatcher extends EventEmitter {
       this.emit('error', 'Not logged in');
       return;
     }
-    this.poll();
     this._boundHandler = (steamID, personaState) => this._onPersonaState(steamID, personaState);
     this.client.on('friendPersonaState', this._boundHandler);
+    setTimeout(() => this.poll(), 1000);
     this._interval = setInterval(() => this.poll(), 30000);
   }
 

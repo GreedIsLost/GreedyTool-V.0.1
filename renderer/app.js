@@ -700,14 +700,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = $('friends-list');
     const count = $('friends-count');
     if (!list || !count) return;
-    count.textContent = '(' + data.count + ' online)';
-    if (!data.friends || data.friends.length === 0) {
+    const online = (data.friends || []).filter(f => f.state !== 0);
+    count.textContent = '(' + online.length + ' online)';
+    if (online.length === 0) {
       list.innerHTML = '<div class="text-muted" style="font-size:12px;padding:8px;">No friends online.</div>';
       return;
     }
     let html = '';
-    for (const f of data.friends) {
-      if (f.state === 0) continue;
+    for (const f of online) {
       const stateClass = f.state === 1 ? 'online' : f.state === 2 ? 'busy' : f.state === 3 ? 'away' : f.state === 4 ? 'snooze' : f.state === 5 ? 'trade' : f.state === 6 ? 'play' : '';
       const avatar = f.avatarUrl ? `<img src="${f.avatarUrl}" alt=""/>` : '';
       html += `<div class="friend-item">
@@ -719,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="friend-state ${stateClass}">${f.stateLabel}</div>
       </div>`;
     }
-    list.innerHTML = html || '<div class="text-muted" style="font-size:12px;padding:8px;">No friends online.</div>';
+    list.innerHTML = html;
     $('friends-status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
   }
 

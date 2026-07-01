@@ -34,6 +34,7 @@ class SteamIdler extends EventEmitter {
 
     this.client.on('loggedOn', () => {
       this.status = 'connected';
+      this.client.setPersonaState(SteamUser.EPersonaState.Online);
       this.emit('status', this.status);
       this.emit('loggedIn');
 
