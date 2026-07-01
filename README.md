@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>Steam Manifest & Lua Tool</b><br>
-  <i>Generate manifests, download from CDN, unlock achievements.</i>
+  <i>Generate manifests, download from CDN, unlock achievements, boost hours.</i>
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 
 ## Overview
 
-A desktop tool for generating Lua and ACF manifests, downloading real depot manifests from the Steam CDN, and managing your library — all wrapped in a native Electron interface with built-in Steam Achievement Manager support.
+A desktop tool for generating Lua and ACF manifests, downloading real depot manifests from the Steam CDN, boosting playtime hours, and managing your library — all wrapped in a native Electron interface with built-in SAM support.
 
 ---
 
@@ -44,6 +44,10 @@ A desktop tool for generating Lua and ACF manifests, downloading real depot mani
   <tr>
     <td width="50%" align="center"><b>Manifest Decoder</b><br><sub>Inspect <code>.manifest</code> binary files</sub></td>
     <td width="50%" align="center"><b>Achievement Unlocker</b><br><sub>Bundled SAM — launch with one click</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>Hour Booster</b><br><sub>Idle any game to accumulate playtime hours</sub></td>
+    <td width="50%" align="center"><b>Drag & Drop</b><br><sub>Drop store links or raw App IDs</sub></td>
   </tr>
   <tr>
     <td width="50%" align="center"><b>Backup Export</b><br><sub>Package manifests + Lua into <code>.zip</code></sub></td>
@@ -91,17 +95,17 @@ npm start
   +------------------+       +---------+--------+
                                          |
                                          v
-                                +--------+---------+
-                                |  Lua + ACF Gen   |
-                                +--------+---------+
-                                         |
-                  +----------------------+----------------------+
-                  |                      |                      |
-                  v                      v                      v
-         +--------+-------+    +--------+-------+    +--------+-------+
-         | Import to Steam |    |  Export .zip    |    | Launch SAM    |
-         | + Restart       |    |  Backup         |    | (achievements)|
-         +-----------------+    +-----------------+    +---------------+
+                                 +--------+---------+
+                                 |  Lua + ACF Gen   |
+                                 +--------+---------+
+                                          |
+                   +----------------------+----------------------+----------------------+
+                   |                      |                      |                      |
+                   v                      v                      v                      v
+          +--------+-------+    +--------+-------+    +--------+-------+    +--------+-------+
+          | Import to Steam |    |  Export .zip    |    | Launch SAM      |    | Hour Booster   |
+          | + Restart       |    |  Backup         |    | (achievements)  |    | (idle any game)|
+          +-----------------+    +-----------------+    +-----------------+    +---------------+
 ```
 
 ---
@@ -118,7 +122,9 @@ GreedyTool/
 |   +-- app.js                  UI logic
 
 +-- core/
+|   +-- idler.js                Steam hour booster (steam-user)
 |   +-- sam.js                  SAM detection, launch, download
+|   +-- sam-download.js          Shared download utils (SAM)
 |   +-- setup-sam.js            Postinstall bundler for SAM
 |   +-- manifest.js             Process pipeline orchestrator
 |   +-- downloader.js           CDN download (12 mirrors)
@@ -133,6 +139,7 @@ GreedyTool/
 |   +-- updater.js              Self-updater
 |   +-- ipc/
 |       +-- app.js              SAM, file picker, cache, settings
+|       +-- idler.js            Idler IPC handlers
 |       +-- library.js          Import to Steam
 |       +-- steam.js            Process, search, details
 
@@ -164,6 +171,10 @@ content-1.steampowered.com  ...  content-8.steampowered.com
     -> steamstatic.com (with .crc)
       -> steamstatic.com (without .crc)
 ```
+
+### Hour Booster
+
+The **Idler** tool (Tools > Idler) uses `steam-user` to log into Steam and send play heartbeats for any App ID. This accumulates playtime hours on your profile without needing the game installed. Supports Steam Guard codes. Credentials go directly to Steam, not to any third party.
 
 ### SAM
 
