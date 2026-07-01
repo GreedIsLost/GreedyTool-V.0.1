@@ -20,7 +20,7 @@ A sleek Electron-powered tool for generating Lua manifests, downloading Steam de
 | **Import to Steam** | Auto-import Lua + appmanifest + restart Steam |
 | **Batch Processing** | Queue up multiple App IDs with concurrency control |
 | **Manifest Decoder** | Decode `.manifest` files for inspection |
-| **SAM Integration** | Bundled via `npm install` — auto-detect, launch Steam Achievement Manager with current App ID |
+| **SAM Integration** | Bundled via `npm install` — unlock achievements with one click from inside GreedyTool |
 | **Backup Export** | Package manifests + Lua into a `.zip` |
 | **Drag & Drop** | Drop Steam store links or raw App IDs |
 
