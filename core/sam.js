@@ -79,9 +79,12 @@ async function downloadSam() {
   }
 
   const zipPath = path.join(samDir, 'sam.zip');
-  await downloadFile(url, zipPath);
-  extractZip(zipPath, samDir, EXE_NAME);
-  await fs.unlink(zipPath);
+  try {
+    await downloadFile(url, zipPath);
+    extractZip(zipPath, samDir, EXE_NAME);
+  } finally {
+    await fs.unlink(zipPath).catch(() => {});
+  }
 
   if (await fs.pathExists(exePath)) {
     return { success: true, path: exePath, message: 'Downloaded to project' };

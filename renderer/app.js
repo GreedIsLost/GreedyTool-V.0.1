@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shown = s.files.slice(0, 100);
         html += `<table class="manifest-table"><tr><th>File</th><th>Size</th></tr>`;
         for (const f of shown) {
-          html += `<tr><td>${f.name}</td><td>${formatBytes(f.size)}</td></tr>`;
+          html += `<tr><td>${escapeHtml(f.name)}</td><td>${formatBytes(f.size)}</td></tr>`;
         }
         html += `</table>`;
         if (s.files.length > 100) html += `<div class="text-muted mt-8">...and ${s.files.length - 100} more files</div>`;
@@ -848,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const h of historyData) {
         const item = document.createElement('div');
         item.className = 'history-item';
-        item.innerHTML = '<span class="app-id">' + h.appId + '</span><span class="app-title">' + h.title.replace(/</g, '&lt;') + '</span><span class="app-date">' + new Date(h.date).toLocaleDateString() + '</span>';
+        item.innerHTML = '<span class="app-id">' + h.appId + '</span><span class="app-title">' + escapeHtml(h.title) + '</span><span class="app-date">' + new Date(h.date).toLocaleDateString() + '</span>';
         item.addEventListener('click', () => { $('quick-appid').value = h.appId; switchView('search'); quickGo(); });
         list.appendChild(item);
       }

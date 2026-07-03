@@ -35,7 +35,9 @@ async function load() {
 
 async function save(data) {
   cache = data;
-  saveQueue = saveQueue.then(() => fs.writeJson(getStoragePath(), data, { spaces: 2 }));
+  saveQueue = saveQueue.then(() => fs.writeJson(getStoragePath(), data, { spaces: 2 })).catch(err => {
+    console.error('History save error:', err);
+  });
   await saveQueue;
 }
 
