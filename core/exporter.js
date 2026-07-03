@@ -20,7 +20,14 @@ async function exportBackup(appId, luaContent, manifestPaths, outputDir, depots 
 
   return new Promise((resolve, reject) => {
     let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      archive.abort();
+      reject(new Error('Archive timed out'));
+    }, 30000);
     function done(err, result) {
+      clearTimeout(timer);
       if (settled) return;
       settled = true;
       if (err) reject(err);

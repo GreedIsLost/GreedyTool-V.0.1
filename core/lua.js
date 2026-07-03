@@ -16,8 +16,9 @@ function generateLua(appId, title = 'Unknown Game', depots = []) {
   lua += `    name = "${escapeLuaString(title)}",\n`;
   lua += `    depots = {\n`;
   for (const d of depots) {
+    const did = Number.isInteger(d.depotId) && d.depotId > 0 ? d.depotId : 0;
     const mid = d.manifestId ? formatManifestId(d.manifestId) : '0';
-    lua += `        [${d.depotId}] = { manifestid = ${mid} },\n`;
+    lua += `        [${did}] = { manifestid = ${mid} },\n`;
   }
   lua += `    },\n`;
   lua += `}`;

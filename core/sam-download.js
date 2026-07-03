@@ -43,7 +43,7 @@ function downloadFile(url, dest, redirects = 5) {
         fs.unlink(dest).catch(() => {});
         reject(err);
       });
-      file.on('finish', () => file.close(resolve));
+      file.on('finish', () => file.close(err => err ? reject(err) : resolve(dest)));
       file.on('error', (err) => {
         fs.unlink(dest).catch(() => {});
         reject(err);

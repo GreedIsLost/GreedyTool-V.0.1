@@ -268,7 +268,7 @@ async function downloadSelectedFiles(manifestPath, depotId, selectedPaths, outpu
 
   if (!depotKey) depotKey = await resolveDepotKey(depotId);
 
-  const chunkDir = path.join(outputDir, '.greed-chunks-' + crypto.randomUUID().slice(0, 8));
+  const chunkDir = path.join(outputDir, '.greed-chunks-' + crypto.randomUUID().replace(/-/g, '').slice(0, 16));
 
   const neededChunks = [];
   const neededShaSet = new Set();

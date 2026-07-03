@@ -46,7 +46,7 @@ function hexify(obj) {
   if (Array.isArray(obj)) return obj.map(hexify);
   const o = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (v && typeof v === 'object' && v.constructor && v.constructor.name === 'Uint8Array') {
+    if (v && typeof v === 'object' && v.constructor && (v.constructor.name === 'Uint8Array' || Buffer.isBuffer(v))) {
       o[k] = Buffer.from(v).toString('hex');
     } else if (v && typeof v === 'object' && !Array.isArray(v)) {
       o[k] = hexify(v);
