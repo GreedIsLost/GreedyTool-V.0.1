@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <b>Steam Manifest & Lua Tool</b><br>
-  <i>Generate manifests, download from CDN, unlock achievements, boost hours.</i>
+  <b>Steam Manifest & Depot Tool</b><br>
+  <i>Generate manifests, download depot files from CDN, unlock achievements, boost hours.</i>
 </p>
 
 <p align="center">
@@ -44,15 +44,19 @@ A desktop tool for generating Lua and ACF manifests, downloading real depot mani
   </tr>
   <tr>
     <td width="50%" align="center"><b>Manifest Decoder</b><br><sub>Inspect <code>.manifest</code> binary files</sub></td>
-    <td width="50%" align="center"><b>Achievement Unlocker</b><br><sub>Bundled SAM — launch with one click</sub></td>
+    <td width="50%" align="center"><b>Depot Downloader</b><br><sub>Browse file tree, download + decrypt + reassemble depot files</sub></td>
   </tr>
   <tr>
-    <td width="50%" align="center"><b>Hour Booster</b><br><sub>Idle any game to accumulate playtime hours</sub></td>
+    <td width="50%" align="center"><b>Hour Booster</b><br><sub>Multi-idle games to accumulate playtime hours in parallel</sub></td>
     <td width="50%" align="center"><b>Friends Presence</b><br><sub>Online friends, game status, live updates</sub></td>
   </tr>
   <tr>
+    <td width="50%" align="center"><b>Achievement Unlocker</b><br><sub>Bundled SAM — launch with one click</sub></td>
     <td width="50%" align="center"><b>Backup Export</b><br><sub>Package manifests + Lua into <code>.zip</code></sub></td>
+  </tr>
+  <tr>
     <td width="50%" align="center"><b>Auto-Update</b><br><sub>Check, download, install via electron-updater</sub></td>
+    <td width="50%" align="center"><b>Game Library Picker</b><br><sub>Load installed games from Steam library for idling or processing</sub></td>
   </tr>
 </table>
 
@@ -123,26 +127,27 @@ GreedyTool/
 |   +-- app.js                  UI logic
 
 +-- core/
-|   +-- idler.js                Steam hour booster (steam-user)
+|   +-- idler.js                Steam hour booster (steam-user, multi-idle)
 |   +-- friends.js              Friends presence watcher (EventEmitter)
 |   +-- sam.js                  SAM detection, launch, download
 |   +-- sam-download.js          Shared download utils (SAM)
 |   +-- setup-sam.js            Postinstall bundler for SAM
 |   +-- manifest.js             Process pipeline orchestrator
-|   +-- downloader.js           CDN download (12 mirrors)
+|   +-- downloader.js           CDN manifest download (12 mirrors)
+|   +-- depot-downloader.js     Depot file download: SHA-1 chunks, AES decrypt, decompress, reassemble
 |   +-- steamkit.js             Depot lookup (API -> SteamDB -> common)
 |   +-- steamapi.js             Steam Store API client
 |   +-- lua.js                  Lua manifest generator
-|   +-- utils.js                ACF manifest generator
-|   +-- protobuf.js             Steam protobuf decoder
-|   +-- cache.js                Local manifest cache
+|   +-- utils.js                ACF manifest generator + installed games scanner
+|   +-- protobuf.js             Steam protobuf decoder (payload + chunks)
+|   +-- cache.js                Local manifest cache + chunk cache
 |   +-- exporter.js             ZIP backup exporter
 |   +-- history.js              Session persistence
 |   +-- ipc/
-|       +-- app.js              SAM, file picker, cache, settings
-|       +-- idler.js            Idler IPC handlers
+|       +-- app.js              SAM, depot, file picker, cache, settings
+|       +-- idler.js            Idler IPC handlers + installed games
 |       +-- friends.js          Friends IPC handlers
-|       +-- library.js          Import to Steam
+|       +-- library.js          Import to Steam (muxed Steam lifecycle)
 |       +-- steam.js            Process, search, details
 
 +-- sam/
@@ -163,7 +168,7 @@ GreedyTool/
 
 ### Concurrency
 
-Batch processing runs **3 concurrent downloads** to stay under rate limits.
+Batch processing runs **3 concurrent downloads** to stay under rate limits. The Depot Downloader runs **6 concurrent chunk downloads**.
 
 ### CDN Fallback
 
@@ -176,11 +181,23 @@ content-1.steampowered.com  ...  content-8.steampowered.com
 
 ### Hour Booster
 
-The **Idler** tool (Tools > Idler) uses `steam-user` to log into Steam and send play heartbeats for any App ID. This accumulates playtime hours on your profile without needing the game installed. Supports Steam Guard codes. Credentials go directly to Steam, not to any third party.
+The **Idler** tool (Tools > Idler) uses `steam-user` to log into Steam and send play heartbeats for any App ID. Idle **multiple games simultaneously** — each game accumulates hours independently in real time. Enter one App ID per line in the textarea, or click **Load Library** to pick from your installed Steam games. Supports Steam Guard codes.
 
 ### Friends Presence
 
 After idler login, the **Friends** panel (Tools > Idler) shows online friends with avatar, name, current game, and state badge. Uses the same `steam-user` client — no separate login. Polls every 30s and updates live on persona state changes.
+
+### Depot Downloader
+
+The **Depot DL** tool (Tools > Depot DL) loads a decoded `.manifest` file and displays its file tree with sizes. Select files or entire directories, provide a **Depot ID** and (optionally) a **depot key** hex, choose an output folder, and click **Download Selected**. The pipeline:
+
+1. **Chunk download** — fetches chunks from 10 CDN mirrors in parallel (concurrency 6)
+2. **SHA-1 verify** — each chunk is checked against its manifest hash after download
+3. **AES-256-ECB decrypt** — if a depot key is provided (auto-fetched from SteamDB or manual)
+4. **zlib decompress** — when `compressed_length` differs from `uncompressed_length`
+5. **Reassemble** — concatenates chunks in order, trims to the file size, writes to disk
+
+Depot keys can be auto-resolved from [SteamDB](https://steamdb.info) or entered manually via the **Set Key** button. Chunks are cached in `output/.greed-chunks/raw/` and `output/.greed-chunks/clean/` for resume across sessions.
 
 ### Auto-Update
 
