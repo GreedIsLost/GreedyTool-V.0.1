@@ -11,18 +11,17 @@ let steamQueue = [];
 async function execSteamOp(fn) {
   if (steamBusy) {
     return new Promise((resolve, reject) => {
-      steamQueue.push({ resolve, reject });
+      steamQueue.push({ fn, resolve, reject });
     });
   }
   steamBusy = true;
   try {
     return await fn();
   } finally {
+    steamBusy = false;
     if (steamQueue.length > 0) {
       const next = steamQueue.shift();
-      next.resolve(execSteamOp(next.fn));
-    } else {
-      steamBusy = false;
+      execSteamOp(next.fn).then(next.resolve).catch(next.reject);
     }
   }
 }

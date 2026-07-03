@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (r.success) {
       $('friends-panel').classList.remove('hidden');
     } else {
-      console.error('friends start error:', r.error);
+      setStatus($('idler-connection-status'), 'Friends: ' + r.error, 'error');
     }
   });
 
