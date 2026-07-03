@@ -53,12 +53,12 @@ async function detectSam() {
 }
 
 async function launchSam(exePath, appId) {
-  const args = appId ? [String(appId)] : [];
+  const { spawn } = require('child_process');
+  const args = appId ? [String(appId).replace(/[^0-9]/g, '')] : [];
   return new Promise((resolve, reject) => {
-    const proc = exec(`"${exePath}" ${args.join(' ')}`, (err) => {
-      if (err && err.code !== 0 && err.code !== null) reject(err);
-      else resolve();
-    });
+    const proc = spawn(exePath, args, { stdio: 'ignore', detached: true });
+    proc.on('error', reject);
+    proc.on('spawn', () => resolve());
     proc.unref();
   });
 }

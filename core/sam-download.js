@@ -10,6 +10,7 @@ async function getLatestReleaseUrl() {
     }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
+      res.on('error', reject);
       res.on('end', () => {
         try {
           const release = JSON.parse(data);
@@ -37,7 +38,16 @@ function downloadFile(url, dest, redirects = 5) {
         return;
       }
       res.pipe(file);
+      res.on('error', (err) => {
+        file.close();
+        fs.unlink(dest).catch(() => {});
+        reject(err);
+      });
       file.on('finish', () => file.close(resolve));
+      file.on('error', (err) => {
+        fs.unlink(dest).catch(() => {});
+        reject(err);
+      });
     }).on('error', (err) => {
       fs.unlink(dest).catch(() => {});
       reject(err);
@@ -47,14 +57,19 @@ function downloadFile(url, dest, redirects = 5) {
 
 function extractZip(zipPath, destDir, entryName) {
   if (process.platform === 'win32') {
-    execSync(
-      `powershell -command "& { Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force }"`,
-      { stdio: 'pipe', timeout: 60000 }
-    );
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('powershell', [
+      '-command', `& { Expand-Archive -Path '${zipPath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force }`
+    ], { stdio: 'pipe', timeout: 60000 });
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error(`PowerShell exit code ${result.status}: ${result.stderr?.toString() || 'unknown'}`);
   } else {
-    execSync(`unzip -o -j "${zipPath}" "${entryName}" -d "${destDir}"`, {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('unzip', ['-o', '-j', zipPath, entryName, '-d', destDir], {
       stdio: 'pipe', timeout: 60000,
     });
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error(`unzip exit code ${result.status}: ${result.stderr?.toString() || 'unknown'}`);
   }
 }
 

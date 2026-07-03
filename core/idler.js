@@ -12,15 +12,18 @@ class SteamIdler extends EventEmitter {
   reset() {
     this.client = null;
     this.status = 'disconnected';
-    this.currentAppId = null;
-    this._pendingAppId = null;
+    this.currentAppIds = [];
+    this._pendingAppIds = [];
     this._guardCallback = null;
     this._dataDir = null;
+    this._listeners = [];
+    this.username = null;
   }
 
   login(username, password) {
     if (this.client) this.logout();
 
+    this.username = username;
     this.status = 'connecting';
     this.emit('status', this.status);
 
@@ -32,39 +35,49 @@ class SteamIdler extends EventEmitter {
       autoRelogin: true,
     });
 
-    this.client.on('loggedOn', () => {
+    this._listeners = [];
+
+    const onLoggedOn = () => {
       this.status = 'connected';
       this.client.setPersonaState(SteamUser.EPersonaState.Online);
       this.emit('status', this.status);
       this.emit('loggedIn');
 
-      if (this._pendingAppId) {
-        this.currentAppId = this._pendingAppId;
-        this.client.gamesPlayed([this._pendingAppId]);
+      if (this._pendingAppIds.length > 0) {
+        this.currentAppIds = [...this._pendingAppIds];
+        this.client.gamesPlayed(this._pendingAppIds);
         this.status = 'idling';
         this.emit('status', this.status);
-        this.emit('idling-started', this._pendingAppId);
+        this.emit('idling-started', this._pendingAppIds);
       }
-    });
+    };
+    this.client.on('loggedOn', onLoggedOn);
+    this._listeners.push({ event: 'loggedOn', fn: onLoggedOn });
 
-    this.client.on('error', (err) => {
+    const onError = (err) => {
       console.error('[idler]', err);
       this.emit('error', (err && err.message) || String(err));
-    });
+    };
+    this.client.on('error', onError);
+    this._listeners.push({ event: 'error', fn: onError });
 
-    this.client.on('steamGuard', (domain, callback, lastCodeWrong) => {
+    const onSteamGuard = (domain, callback, lastCodeWrong) => {
       this.status = 'guard-needed';
       this.emit('guard-needed', domain, lastCodeWrong);
       this._guardCallback = callback;
-    });
+    };
+    this.client.on('steamGuard', onSteamGuard);
+    this._listeners.push({ event: 'steamGuard', fn: onSteamGuard });
 
-    this.client.on('disconnected', (eresult) => {
-      if (this.currentAppId) this._pendingAppId = this.currentAppId;
-      this.currentAppId = null;
+    const onDisconnected = (eresult) => {
+      if (this.currentAppIds.length > 0) this._pendingAppIds = [...this.currentAppIds];
+      this.currentAppIds = [];
       this.status = 'disconnected';
       this.emit('status', this.status);
       if (eresult) console.error('[idler] disconnected:', eresult);
-    });
+    };
+    this.client.on('disconnected', onDisconnected);
+    this._listeners.push({ event: 'disconnected', fn: onDisconnected });
 
     this.client.logOn({
       accountName: username,
@@ -79,24 +92,31 @@ class SteamIdler extends EventEmitter {
     }
   }
 
-  startIdle(appId) {
+  startIdle(appIds) {
+    if (!Array.isArray(appIds)) appIds = [appIds];
+    const ids = appIds.filter(Boolean).map(Number).filter(n => n > 0);
+    if (ids.length === 0) {
+      this.emit('error', 'No valid App IDs');
+      return;
+    }
     if (!this.client || !this.client.steamID) {
+      this._pendingAppIds = ids;
       this.emit('error', 'Not logged in');
       return;
     }
-    this.currentAppId = appId;
-    this._pendingAppId = appId;
-    this.client.gamesPlayed([appId]);
+    this.currentAppIds = ids;
+    this._pendingAppIds = ids;
+    this.client.gamesPlayed(ids);
     this.status = 'idling';
     this.emit('status', this.status);
-    this.emit('idling-started', appId);
+    this.emit('idling-started', ids);
   }
 
   stopIdle() {
     if (!this.client) return;
     this.client.gamesPlayed([]);
-    this.currentAppId = null;
-    this._pendingAppId = null;
+    this.currentAppIds = [];
+    this._pendingAppIds = [];
     this.status = 'connected';
     this.emit('status', this.status);
     this.emit('idling-stopped');
@@ -106,21 +126,20 @@ class SteamIdler extends EventEmitter {
     if (this.client) {
       try { this.client.gamesPlayed([]); } catch {}
       try { this.client.logOff(); } catch {}
-      try { this.client.removeAllListeners(); } catch {}
+      for (const { event, fn } of this._listeners) {
+        try { this.client.removeListener(event, fn); } catch {}
+      }
       this.client = null;
     }
     this.reset();
     this.emit('status', this.status);
   }
 
-  getClient() {
-    return this.client;
-  }
-
   getState() {
     return {
       status: this.status,
-      currentAppId: this.currentAppId,
+      currentAppIds: this.currentAppIds,
+      username: this.username,
     };
   }
 }

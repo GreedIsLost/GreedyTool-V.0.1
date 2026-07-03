@@ -1,3 +1,9 @@
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB'];
@@ -44,6 +50,8 @@ function switchView(view) {
   Object.keys(pages).forEach(k => pages[k].classList.toggle('active', k === view));
   document.querySelectorAll('.sidebar-item[data-view]')
     .forEach(el => el.classList.toggle('active', el.dataset.view === view));
+  document.querySelectorAll('.nav-bar button[data-page]')
+    .forEach(el => el.classList.toggle('active', el.dataset.page === view));
   if (view === 'library') refreshLibrary();
   if (view === 'search') $('search-input')?.focus();
   if (view === 'tools') refreshCacheStats();
@@ -67,11 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('click', () => switchView(el.dataset.view));
   });
   document.querySelectorAll('.nav-bar button[data-page]').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.nav-bar button[data-page]').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      switchView(el.dataset.page);
-    });
+    el.addEventListener('click', () => switchView(el.dataset.page));
   });
   updateSidebarStatus();
 
@@ -271,9 +275,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.className = 'search-result';
         div.innerHTML = `
-          <div class="search-result-img">${r.icon ? '<img src="' + r.icon + '" alt=""/>' : '?'}</div>
-          <div class="search-result-info"><div class="search-result-name">${r.name}</div><div class="search-result-id">App ID: ${r.appId}</div></div>
-          <button class="btn btn-green btn-sm process-search" data-id="${r.appId}" data-name="${r.name}">Process</button>`;
+          <div class="search-result-img">${r.icon ? `<img src="${r.icon.replace(/"/g, '&quot;')}" alt=""/>` : '?'}</div>
+          <div class="search-result-info"><div class="search-result-name">${escapeHtml(r.name)}</div><div class="search-result-id">App ID: ${r.appId}</div></div>
+          <button class="btn btn-green btn-sm process-search" data-id="${r.appId}" data-name="${escapeHtml(r.name)}">Process</button>`;
         results.appendChild(div);
       }
       results.querySelectorAll('.process-search').forEach(b => {
@@ -322,25 +326,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const div = $('quick-result');
     state.lastManifestPath = result.depots && result.depots.length > 0 ? result.depots[0].path : null;
     updateDecodeLastBtn();
-    const infoHtml = result.appInfo ? `
+    function esc(str) { return escapeHtml(String(str ?? '')); }
+    const ai = result.appInfo;
+    const infoHtml = ai ? `
       <div class="app-info-panel">
-        <img src="${result.appInfo.headerImage || 'https://cdn.steamstatic.com/steam/apps/' + appId + '/header.jpg'}" alt="" onerror="this.style.display='none'"/>
+        <img src="${ai.headerImage || 'https://cdn.steamstatic.com/steam/apps/' + appId + '/header.jpg'}" alt="" onerror="this.style.display='none'"/>
         <div class="app-info-body">
-          <h3>${result.appInfo.name}</h3>
+          <h3>${esc(ai.name)}</h3>
           <div class="app-info-details">
-            ${result.appInfo.developer ? '<strong>Developer:</strong> ' + result.appInfo.developer + '<br/>' : ''}
-            ${result.appInfo.publisher ? '<strong>Publisher:</strong> ' + result.appInfo.publisher + '<br/>' : ''}
-            ${result.appInfo.releaseDate ? '<strong>Release:</strong> ' + result.appInfo.releaseDate + '<br/>' : ''}
-            ${result.appInfo.genres ? '<strong>Genres:</strong> ' + result.appInfo.genres + '<br/>' : ''}
-            ${result.appInfo.price ? '<strong>Price:</strong> ' + result.appInfo.price : ''}
-            ${result.appInfo.metacritic ? ' | <strong>Metacritic:</strong> ' + result.appInfo.metacritic : ''}
+            ${ai.developer ? '<strong>Developer:</strong> ' + esc(ai.developer) + '<br/>' : ''}
+            ${ai.publisher ? '<strong>Publisher:</strong> ' + esc(ai.publisher) + '<br/>' : ''}
+            ${ai.releaseDate ? '<strong>Release:</strong> ' + esc(ai.releaseDate) + '<br/>' : ''}
+            ${ai.genres ? '<strong>Genres:</strong> ' + esc(ai.genres) + '<br/>' : ''}
+            ${ai.price ? '<strong>Price:</strong> ' + esc(ai.price) : ''}
+            ${ai.metacritic ? ' | <strong>Metacritic:</strong> ' + esc(ai.metacritic) : ''}
           </div>
-          ${result.appInfo.shortDescription ? '<div class="app-info-desc">' + result.appInfo.shortDescription + '</div>' : ''}
-          ${result.appInfo.screenshots && result.appInfo.screenshots.length > 0 ? '<div class="screenshot-strip">' + result.appInfo.screenshots.map(s => '<img src="' + s + '" onclick="window.open(\'' + s + '\')"/>').join('') + '</div>' : ''}
+          ${ai.shortDescription ? '<div class="app-info-desc">' + esc(ai.shortDescription) + '</div>' : ''}
+          ${ai.screenshots && ai.screenshots.length > 0 ? '<div class="screenshot-strip">' + ai.screenshots.map(s => `<img src="${s}" data-url="${s.replace(/"/g, '&quot;')}"/>`).join('') + '</div>' : ''}
         </div>
       </div>` : '';
     div.innerHTML = infoHtml + `
-      <div class="status-bar success">${result.title} (${appId}) ready</div>
+      <div class="status-bar success">${esc(result.title)} (${appId}) ready</div>
       <div class="depot-grid">
         ${result.depots.map(d => `<div class="depot-chip"><span class="label">Depot ${d.depotId}</span> <span class="val ${d.downloaded ? (d.cached ? 'cached' : 'ok') : 'no'}">${d.downloaded ? (d.cached ? 'Cached' : '&#10003;') : '&#10007;'}</span></div>`).join('')}
       </div>
@@ -357,13 +363,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportBtn = div.querySelector('.quick-export');
     if (exportBtn) exportBtn.onclick = async () => {
       const paths = result.depots.filter(d => d.path).map(d => d.path);
-      const exp = await window.greed.exportBackup({ appId, luaContent: result.lua, manifestPaths: paths });
+      const exp = await window.greed.exportBackup({ appId, luaContent: result.lua, manifestPaths: paths, depots: result.depots });
       if (exp.success) setStatus($('search-status'), 'Backup saved: ' + exp.path, 'success');
+      else setStatus($('search-status'), 'Backup failed: ' + (exp.error || 'unknown error'), 'error');
     };
     const decodeBtn = div.querySelector('.quick-decode');
     if (decodeBtn) decodeBtn.onclick = async () => {
       if (state.lastManifestPath) decodeManifestFile(state.lastManifestPath);
     };
+    div.querySelectorAll('.screenshot-strip img[data-url]').forEach(img => {
+      img.addEventListener('click', () => {
+        window.greed.openExternal(img.dataset.url);
+      });
+    });
   }
 
   /* BATCH */
@@ -390,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.pendingBatchLua[id] = { lua: r.lua, depots: r.depots };
         html += `<div class="game-card">
           <div class="game-card-img"><img src="https://cdn.steamstatic.com/steam/apps/${id}/header.jpg" onerror="this.parentElement.textContent='No image'" alt=""/></div>
-          <div class="game-card-body"><div class="game-card-title">${r.title}</div><div class="game-card-id">App ${id} &bull; ${r.depots.filter(d => d.downloaded).length}/${r.depots.length} depots</div></div>
+          <div class="game-card-body"><div class="game-card-title">${escapeHtml(r.title)}</div><div class="game-card-id">App ${id} &bull; ${r.depots.filter(d => d.downloaded).length}/${r.depots.length} depots</div></div>
           <div class="game-card-actions"><button class="btn btn-green btn-sm batch-import-one" data-id="${id}">Import</button><button class="btn btn-secondary btn-sm batch-export-one" data-id="${id}">Export</button></div>
         </div>`;
       }
@@ -439,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn || !btn.dataset.tooltab) return;
     $('tools-tabs').querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    ['decoder', 'sam', 'idler', 'cache', 'build'].forEach(id => {
+    ['decoder', 'sam', 'idler', 'cache', 'depot', 'build'].forEach(id => {
       const el = $('tooltab-' + id);
       if (el) el.classList.toggle('hidden', id !== btn.dataset.tooltab);
     });
@@ -555,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* IDLER */
-  let idlerState = { status: 'disconnected' };
+  let idlerState = { status: 'disconnected', currentAppIds: [] };
 
   function updateIdlerUI() {
     const s = idlerState.status;
@@ -564,9 +576,10 @@ document.addEventListener('DOMContentLoaded', () => {
     $('idler-controls').classList.toggle('hidden', s !== 'connected' && s !== 'idling');
     const sd = $('idler-status-display');
     if (!sd) return;
-    if (s === 'idling' && idlerState.currentAppId) {
+    if (s === 'idling' && idlerState.currentAppIds.length > 0) {
       sd.className = 'status-bar success mt-8';
-      sd.textContent = 'Idling App ' + idlerState.currentAppId + ' - accumulating hours...';
+      const count = idlerState.currentAppIds.length;
+      sd.textContent = `Idling ${count} game${count !== 1 ? 's' : ''} - accumulating hours in parallel`;
     } else if (s === 'connected') {
       sd.className = 'status-bar info mt-8';
       sd.textContent = 'Connected to Steam. Ready to idle.';
@@ -579,6 +592,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idlerState.username) {
       $('idler-user-display').textContent = idlerState.username;
     }
+    renderIdlingList();
+  }
+
+  function renderIdlingList() {
+    const container = $('idler-idling-list');
+    if (!container) return;
+    if (idlerState.status !== 'idling' || idlerState.currentAppIds.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    let html = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Currently idling:</div>';
+    for (const appId of idlerState.currentAppIds) {
+      html += `<span class="depot-chip" style="display:inline-block;margin:2px;"><span class="label">App ${appId}</span></span> `;
+    }
+    container.innerHTML = html;
   }
 
   window.greed.onIdlerEvent('idler-status', (data) => {
@@ -616,13 +644,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   window.greed.onIdlerEvent('idler-idling', (data) => {
-    idlerState.currentAppId = data.appId;
+    idlerState.currentAppIds = data.appIds || [];
     idlerState.status = 'idling';
     updateIdlerUI();
   });
 
   window.greed.onIdlerEvent('idler-stopped', () => {
-    idlerState.currentAppId = null;
+    idlerState.currentAppIds = [];
     idlerState.status = 'connected';
     updateIdlerUI();
   });
@@ -657,12 +685,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('idler-start-btn').addEventListener('click', async () => {
-    const appId = parseInt($('idler-appid').value.trim());
-    if (!appId) { setStatus($('idler-connection-status'), 'Enter a valid App ID', 'error'); return; }
+    const raw = $('idler-appids').value.trim();
+    if (!raw) { setStatus($('idler-connection-status'), 'Enter App IDs (one per line)', 'error'); return; }
+    const appIds = raw.split('\n').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+    if (appIds.length === 0) { setStatus($('idler-connection-status'), 'No valid App IDs', 'error'); return; }
     try {
-      const r = await window.greed.idlerStart({ appId });
+      const r = await window.greed.idlerStart({ appIds });
       if (r.success) {
-        setStatus($('idler-connection-status'), 'Idling App ' + appId, 'success');
+        setStatus($('idler-connection-status'), `Idling ${appIds.length} game${appIds.length !== 1 ? 's' : ''}`, 'success');
       } else {
         setStatus($('idler-connection-status'), 'Failed: ' + r.error, 'error');
       }
@@ -682,12 +712,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  $('idler-load-library').addEventListener('click', async () => {
+    const list = $('idler-library-list');
+    const count = $('idler-library-count');
+    if (!list || !count) return;
+    try {
+      list.innerHTML = '<span class="spinner"></span> Loading...';
+      $('idler-game-picker').classList.remove('hidden');
+      const result = await window.greed.getInstalledGames();
+      if (!result.success) {
+        list.innerHTML = '<span class="text-muted">' + result.error + '</span>';
+        return;
+      }
+      if (result.games.length === 0) {
+        list.innerHTML = '<span class="text-muted">No installed games found</span>';
+        count.textContent = '(0)';
+        return;
+      }
+      count.textContent = `(${result.games.length})`;
+      let html = '';
+      for (const g of result.games) {
+        const name = g.name || 'App ' + g.appId;
+        html += `<label style="display:block;padding:2px 4px;cursor:pointer;border-radius:3px;" class="hover-bg"><input type="checkbox" class="idler-game-cb" data-appid="${g.appId}" /> ${escHtml(name)}</label>`;
+      }
+      list.innerHTML = html;
+      list.querySelectorAll('.idler-game-cb').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const ids = [];
+          list.querySelectorAll('.idler-game-cb:checked').forEach(c => ids.push(c.dataset.appid));
+          $('idler-appids').value = ids.join('\n');
+        });
+      });
+    } catch (err) {
+      list.innerHTML = '<span class="text-muted">Error: ' + err.message + '</span>';
+    }
+  });
+
   $('idler-logout-btn').addEventListener('click', async () => {
     try {
       await window.greed.friendsStop();
       $('friends-panel').classList.add('hidden');
       await window.greed.idlerLogout();
-      idlerState = { status: 'disconnected' };
+      idlerState = { status: 'disconnected', currentAppIds: [] };
       updateIdlerUI();
       setStatus($('idler-connection-status'), 'Logged out', 'info');
     } catch (err) {
@@ -713,10 +779,10 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `<div class="friend-item">
         <div class="friend-avatar">${avatar}</div>
         <div class="friend-info">
-          <div class="friend-name">${f.name}</div>
-          ${f.gameName ? '<div class="friend-game">' + f.gameName + '</div>' : ''}
+          <div class="friend-name">${escapeHtml(f.name)}</div>
+          ${f.gameName ? '<div class="friend-game">' + escapeHtml(f.gameName) + '</div>' : ''}
         </div>
-        <div class="friend-state ${stateClass}">${f.stateLabel}</div>
+        <div class="friend-state ${stateClass}">${escapeHtml(f.stateLabel)}</div>
       </div>`;
     }
     list.innerHTML = html;
@@ -766,21 +832,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* HISTORY */
+  let historyPageEl = null;
   document.querySelector('[data-view="history"]').addEventListener('click', async () => {
     try {
       const historyData = await window.greed.getHistory();
       const main = document.querySelector('.main');
-      const oldPage = main.querySelector('.history-page');
-      if (oldPage) oldPage.remove();
+      if (historyPageEl) historyPageEl.remove();
       const div = document.createElement('div');
+      historyPageEl = div;
       div.className = 'history-page';
+      div.id = 'history-page';
       div.innerHTML = '<div class="page-title">History</div><div class="page-subtitle">Recently processed App IDs</div><div id="history-list">' +
         (historyData.length === 0 ? '<div class="text-muted">No history yet.</div>' : '') + '</div>';
       const list = div.querySelector('#history-list');
       for (const h of historyData) {
         const item = document.createElement('div');
         item.className = 'history-item';
-        item.innerHTML = '<span class="app-id">' + h.appId + '</span><span class="app-title">' + h.title + '</span><span class="app-date">' + new Date(h.date).toLocaleDateString() + '</span>';
+        item.innerHTML = '<span class="app-id">' + h.appId + '</span><span class="app-title">' + h.title.replace(/</g, '&lt;') + '</span><span class="app-date">' + new Date(h.date).toLocaleDateString() + '</span>';
         item.addEventListener('click', () => { $('quick-appid').value = h.appId; switchView('search'); quickGo(); });
         list.appendChild(item);
       }
@@ -790,4 +858,213 @@ document.addEventListener('DOMContentLoaded', () => {
       Object.keys(pages).forEach(k => pages[k].classList.remove('active'));
     } catch (err) { console.error('history load error:', err); }
   });
+
+  /* DEPOT DOWNLOADER */
+  const depotState = {
+    manifestPath: null, outputDir: null, depotId: null, entries: [],
+    selectedPaths: new Set(), decoded: null,
+    fileSelection: new Map(), // path -> { entry, selected }
+  };
+  const $depot = id => document.getElementById(id);
+
+  $depot('depot-pick-manifest').addEventListener('click', async () => {
+    const fp = await window.greed.pickManifestFile();
+    if (!fp) return;
+    depotState.manifestPath = fp;
+    $depot('depot-status').textContent = 'Loading manifest...';
+    $depot('depot-info').classList.add('hidden');
+    $depot('depot-browser').classList.add('hidden');
+    $depot('depot-progress').classList.add('hidden');
+    const result = await window.greed.getManifestTree(fp);
+    if (!result.success) {
+      $depot('depot-status').textContent = 'Error: ' + result.error;
+      return;
+    }
+    depotState.decoded = result;
+    depotState.entries = result.entries || [];
+    depotState.selectedPaths = new Set();
+    depotState.fileSelection = new Map();
+    $depot('depot-selected-count').textContent = '0 / ' + result.totalFiles + ' files selected';
+    $depot('depot-start-download').disabled = true;
+    renderDepotTree();
+    const chunkInfo = result.totalChunks ? `, ${result.totalChunks} chunks` : '';
+    $depot('depot-status').textContent = `Loaded: ${result.totalFiles} files, ${formatBytes(result.totalSize)}${chunkInfo}`;
+    $depot('depot-browser').classList.remove('hidden');
+  });
+
+  $depot('depot-pick-output').addEventListener('click', async () => {
+    const dir = await window.greed.pickFolder();
+    if (dir) {
+      depotState.outputDir = dir;
+      $depot('depot-info').classList.remove('hidden');
+      $depot('depot-info').textContent = 'Output: ' + dir;
+    }
+  });
+
+  $depot('depot-set-key').addEventListener('click', async () => {
+    const depotId = $depot('depot-id').value.trim();
+    const keyHex = $depot('depot-key').value.trim();
+    if (!depotId || !keyHex) {
+      $depot('depot-status').textContent = 'Enter both Depot ID and key hex';
+      return;
+    }
+    await window.greed.depotSetKey({ depotId, keyHex });
+    $depot('depot-status').textContent = `Key set for depot ${depotId}`;
+  });
+
+  function renderDepotTree() {
+    const container = $depot('depot-tree');
+    if (!depotState.entries.length) {
+      container.innerHTML = '<div class="text-muted">No files in manifest.</div>';
+      return;
+    }
+    container.innerHTML = '<div class="depot-tree-root">' + depotState.entries.map(e => renderDepotEntry(e, 0)).join('') + '</div>';
+    container.querySelectorAll('.depot-checkbox').forEach(cb => cb.addEventListener('change', onDepotCheckboxChange));
+    container.querySelectorAll('.depot-dir-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sub = btn.parentElement.nextElementSibling;
+        if (sub) {
+          sub.classList.toggle('hidden');
+          btn.textContent = sub.classList.contains('hidden') ? '▶' : '▼';
+        }
+      });
+    });
+  }
+
+  function renderDepotEntry(entry, depth) {
+    const pad = depth * 18;
+    if (entry.type === 'dir') {
+      let h = `<div style="padding-left:${pad}px;white-space:nowrap;">`;
+      h += `<span class="depot-dir-toggle" style="cursor:pointer;font-size:10px;user-select:none;">▼</span> `;
+      h += `<label style="cursor:pointer;"><input type="checkbox" class="depot-checkbox" data-path="${escHtml(entry.path)}" /> <strong>${escHtml(entry.name)}/</strong></label>`;
+      h += `<div class="depot-children">`;
+      for (const child of entry.children) h += renderDepotEntry(child, depth + 1);
+      h += `</div></div>`;
+      return h;
+    }
+    return `<div style="padding-left:${pad + 18}px;white-space:nowrap;"><label style="cursor:pointer;"><input type="checkbox" class="depot-checkbox" data-path="${escHtml(entry.path)}" /> <span style="color:var(--text-muted);font-size:11px;">${escHtml(entry.name)}</span> <span style="color:var(--text-muted);font-size:10px;">(${formatBytes(entry.size)})</span></label></div>`;
+  }
+
+  function onDepotCheckboxChange(e) {
+    const cb = e.target;
+    const path = cb.dataset.path;
+    if (cb.checked) {
+      depotState.selectedPaths.add(path);
+      cascadeChildren(cb, true);
+      cascadeParents(cb);
+    } else {
+      depotState.selectedPaths.delete(path);
+      cascadeChildren(cb, false);
+      cascadeParents(cb);
+    }
+    updateDepotSelectedCount();
+  }
+
+  function cascadeChildren(cb, checked) {
+    const container = cb.closest('div')?.querySelector('.depot-children');
+    if (!container) return;
+    container.querySelectorAll('.depot-checkbox').forEach(c => {
+      c.checked = checked;
+      if (checked) depotState.selectedPaths.add(c.dataset.path);
+      else depotState.selectedPaths.delete(c.dataset.path);
+    });
+  }
+
+  function cascadeParents(cb) {
+    let el = cb.closest('.depot-children');
+    while (el) {
+      const parentDiv = el.previousElementSibling;
+      if (!parentDiv) break;
+      const parentCb = parentDiv.querySelector('.depot-checkbox');
+      if (!parentCb) break;
+      const siblingCheckboxes = el.querySelectorAll('.depot-checkbox');
+      const allChecked = Array.from(siblingCheckboxes).every(c => c.checked);
+      parentCb.checked = allChecked;
+      if (allChecked) depotState.selectedPaths.add(parentCb.dataset.path);
+      else depotState.selectedPaths.delete(parentCb.dataset.path);
+      el = el.parentElement?.closest('.depot-children');
+    }
+  }
+
+  function updateDepotSelectedCount() {
+    const total = depotState.entries.filter(e => e.type === 'file').length;
+    const count = depotState.selectedPaths.size;
+    $depot('depot-selected-count').textContent = `${count} / ${total} files selected`;
+    $depot('depot-start-download').disabled = count === 0 || !depotState.outputDir;
+  }
+
+  $depot('depot-select-all').addEventListener('click', () => {
+    $depot('depot-tree').querySelectorAll('.depot-checkbox').forEach(cb => {
+      cb.checked = true;
+      depotState.selectedPaths.add(cb.dataset.path);
+    });
+    updateDepotSelectedCount();
+  });
+
+  $depot('depot-deselect-all').addEventListener('click', () => {
+    $depot('depot-tree').querySelectorAll('.depot-checkbox').forEach(cb => {
+      cb.checked = false;
+      depotState.selectedPaths.delete(cb.dataset.path);
+    });
+    updateDepotSelectedCount();
+  });
+
+  $depot('depot-start-download').addEventListener('click', async () => {
+    const depotId = $depot('depot-id').value.trim();
+    if (!depotId) { $depot('depot-status').textContent = 'Enter a Depot ID'; return; }
+    if (!depotState.outputDir) { $depot('depot-status').textContent = 'Select an output folder first'; return; }
+
+    const selectedFiles = Array.from(depotState.selectedPaths).filter(p => {
+      const entry = depotState.entries.find(e => e.path === p);
+      return entry && entry.type === 'file';
+    });
+    if (selectedFiles.length === 0) { $depot('depot-status').textContent = 'No files selected'; return; }
+
+    const key = $depot('depot-key').value.trim() || null;
+    $depot('depot-start-download').disabled = true;
+    $depot('depot-progress').classList.remove('hidden');
+    $depot('depot-progress').textContent = 'Starting download...';
+    $depot('depot-progress').className = 'status-bar info';
+    $depot('depot-status').textContent = '';
+
+    try {
+      const totalSelBytes = selectedFiles.reduce((s, fp) => {
+        const e = depotState.entries.find(x => x.path === fp);
+        return s + (e ? e.size : 0);
+      }, 0);
+      $depot('depot-progress').textContent = `Selected ${selectedFiles.length} files (${formatBytes(totalSelBytes)}). Downloading...`;
+      $depot('depot-progress').className = 'status-bar info';
+
+      const result = await window.greed.depotDownload({
+        manifestPath: depotState.manifestPath,
+        depotId,
+        selectedPaths: selectedFiles,
+        outputDir: depotState.outputDir,
+        depotKey: key,
+      });
+      if (result.success) {
+        const ok = result.completedOk || result.completedFiles;
+        const msg = result.partial
+          ? `Partial: ${ok}/${result.totalFiles} files OK, ${result.missingChunks || 0} chunks missing`
+          : `Done: ${ok} file${ok !== 1 ? 's' : ''}, ${formatBytes(result.totalBytes)} written`;
+        $depot('depot-progress').textContent = msg;
+        $depot('depot-progress').className = 'status-bar success';
+        if (result.missingChunks) {
+          $depot('depot-status').textContent = `${result.missingChunks} chunks missing from CDN — some files incomplete`;
+        }
+      } else {
+        $depot('depot-progress').textContent = 'Error: ' + (result.error || 'Unknown error');
+        $depot('depot-progress').className = 'status-bar error';
+      }
+    } catch (err) {
+      $depot('depot-progress').textContent = 'Error: ' + err.message;
+      $depot('depot-progress').className = 'status-bar error';
+    }
+    $depot('depot-start-download').disabled = false;
+  });
+
+  function escHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 });

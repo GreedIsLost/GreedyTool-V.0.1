@@ -332,6 +332,7 @@
     .depot-chip .ok { color: var(--accent-green); }
     .depot-chip .no { color: var(--danger); }
     .depot-chip .cached { color: var(--accent-orange); }
+    .hover-bg:hover { background: rgba(66, 100, 128, 0.2); }
 
     /* === STATUS BAR === */
     .status-bar {
@@ -536,6 +537,7 @@
           <button data-tooltab="sam">SAM</button>
           <button data-tooltab="idler">Idler</button>
           <button data-tooltab="cache">Cache</button>
+          <button data-tooltab="depot">Depot DL</button>
           <button data-tooltab="build">Build</button>
         </div>
 
@@ -543,7 +545,7 @@
         <div id="tooltab-idler" class="card hidden">
           <div class="card-header">Steam Hour Booster</div>
           <p class="text-muted" style="font-size:12px;margin-bottom:8px;">
-            Log in to Steam and idle games to boost playtime hours.
+            Log in to Steam and idle multiple games at once to boost playtime hours in parallel.
           </p>
           <div id="idler-login-area">
             <div class="flex gap-8 items-center" style="flex-wrap:wrap;">
@@ -564,16 +566,26 @@
               Logged in as: <strong id="idler-user-display"></strong>
             </div>
             <div class="flex gap-8 items-center" style="flex-wrap:wrap;">
-              <input type="text" id="idler-appid" placeholder="App ID to idle" style="width:110px;" />
-              <button id="idler-start-btn" class="btn btn-green btn-sm">Start Idling</button>
-              <button id="idler-stop-btn" class="btn btn-danger btn-sm" disabled>Stop</button>
-              <button id="idler-logout-btn" class="btn btn-secondary btn-sm">Log Out</button>
+              <textarea id="idler-appids" placeholder="App IDs (one per line)" style="width:160px;height:60px;font-size:11px;resize:none;"></textarea>
+              <div class="flex-col gap-4" style="display:inline-flex;">
+                <button id="idler-start-btn" class="btn btn-green btn-sm">Start Idling</button>
+                <button id="idler-stop-btn" class="btn btn-danger btn-sm" disabled>Stop</button>
+              </div>
+              <div class="flex-col gap-4" style="display:inline-flex;">
+                <button id="idler-load-library" class="btn btn-secondary btn-sm">Load Library</button>
+                <button id="idler-logout-btn" class="btn btn-secondary btn-sm">Log Out</button>
+              </div>
             </div>
+            <div id="idler-idling-list" class="mt-8" style="max-height:120px;overflow-y:auto;"></div>
             <div id="idler-status-display" class="status-bar info mt-8">
               Status: disconnected
             </div>
           </div>
           <div id="idler-connection-status" class="status-bar info hidden mt-8"></div>
+          <div id="idler-game-picker" class="hidden mt-8">
+            <div class="card-header" style="font-size:13px;">Installed Games <span id="idler-library-count" class="text-muted" style="font-size:11px;"></span></div>
+            <div id="idler-library-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;font-size:12px;"></div>
+          </div>
           <div id="friends-panel" class="hidden mt-16">
             <div class="card-header" style="font-size:13px;">Friends <span id="friends-count" class="text-muted" style="font-size:11px;"></span></div>
             <div id="friends-list" class="mt-8" style="max-height:280px;overflow-y:auto;"></div>
@@ -613,6 +625,34 @@
           <div id="cache-stats" class="text-muted" style="font-size:12px;">Loading...</div>
           <button id="cache-clear" class="btn btn-danger btn-sm mt-8">Clear Cache</button>
           <div id="cache-status" class="status-bar info hidden mt-8"></div>
+        </div>
+
+        <!-- DEPOT DOWNLOADER -->
+        <div id="tooltab-depot" class="card hidden">
+          <div class="card-header">Depot Downloader</div>
+          <p class="text-muted" style="font-size:12px;margin-bottom:8px;">
+            Load a .manifest file, browse files, and download selected items from Steam CDN.
+          </p>
+          <div class="flex gap-8" style="flex-wrap:wrap;">
+            <button id="depot-pick-manifest" class="btn btn-primary btn-sm">Load Manifest</button>
+            <button id="depot-pick-output" class="btn btn-secondary btn-sm">Output Folder</button>
+            <input type="text" id="depot-id" placeholder="Depot ID" style="width:100px;" />
+            <input type="text" id="depot-key" placeholder="Depot key (hex, optional)" style="width:200px;" />
+            <button id="depot-set-key" class="btn btn-secondary btn-sm">Set Key</button>
+          </div>
+          <div id="depot-status" class="text-muted mt-8" style="font-size:12px;"></div>
+          <div id="depot-info" class="status-bar info hidden mt-8"></div>
+          <div id="depot-browser" class="hidden mt-8">
+            <div class="card-header" style="font-size:13px;">File Browser</div>
+            <div id="depot-tree" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;"></div>
+            <div class="flex gap-8 mt-8 items-center" style="flex-wrap:wrap;">
+              <button id="depot-select-all" class="btn btn-sm btn-secondary">Select All</button>
+              <button id="depot-deselect-all" class="btn btn-sm btn-secondary">Deselect All</button>
+              <span id="depot-selected-count" class="text-muted" style="font-size:11px;">0 files selected</span>
+            </div>
+            <button id="depot-start-download" class="btn btn-green btn-sm mt-8" disabled>Download Selected</button>
+            <div id="depot-progress" class="status-bar info hidden mt-8"></div>
+          </div>
         </div>
 
         <!-- BUILD -->

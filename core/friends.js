@@ -17,6 +17,7 @@ class FriendsWatcher extends EventEmitter {
     this.friends = [];
     this._interval = null;
     this._boundHandler = null;
+    this._initialTimeout = null;
   }
 
   start() {
@@ -26,23 +27,27 @@ class FriendsWatcher extends EventEmitter {
     }
     this._boundHandler = (steamID, personaState) => this._onPersonaState(steamID, personaState);
     this.client.on('friendPersonaState', this._boundHandler);
-    setTimeout(() => this.poll(), 1000);
+    this._initialTimeout = setTimeout(() => this.poll(), 1000);
     this._interval = setInterval(() => this.poll(), 30000);
   }
 
   stop() {
+    if (this._initialTimeout) {
+      clearTimeout(this._initialTimeout);
+      this._initialTimeout = null;
+    }
     if (this._interval) {
       clearInterval(this._interval);
       this._interval = null;
     }
-    if (this._boundHandler) {
-      this.client.removeListener('friendPersonaState', this._boundHandler);
+    if (this._boundHandler && this.client) {
+      try { this.client.removeListener('friendPersonaState', this._boundHandler); } catch {}
       this._boundHandler = null;
     }
   }
 
   poll() {
-    if (!this.client || !this.client.steamID) return;
+    if (!this.client || !this.client.steamID || !this.client.friends) return;
     const list = [];
     const count = this.client.friends.getFriendCount();
     for (let i = 0; i < count; i++) {
@@ -79,6 +84,7 @@ class FriendsWatcher extends EventEmitter {
   }
 
   _onPersonaState(steamID, personaState) {
+    if (!this.client || !this._boundHandler) return;
     this.poll();
   }
 

@@ -17,12 +17,19 @@ message ContentManifestPayload {
     optional string dirname = 1;
     optional uint64 sha_dirname = 2;
   }
+  message ChunkData {
+    optional bytes sha = 1;
+    optional uint32 compressed_crc = 2;
+    optional uint64 compressed_length = 3;
+    optional uint64 uncompressed_length = 4;
+  }
   repeated FileMapping files = 1;
   repeated DirectoryMapping directories = 2;
   optional uint64 creation_time = 3;
   optional uint32 unknown4 = 4;
   optional uint32 unknown5 = 5;
   optional uint32 unknown6 = 6;
+  repeated ChunkData chunks = 7;
 }
 `;
 
@@ -32,6 +39,22 @@ async function getRoot() {
   if (rootCache) return rootCache;
   rootCache = protobuf.parse(PROTO_DEF).root;
   return rootCache;
+}
+
+function hexify(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(hexify);
+  const o = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v && typeof v === 'object' && v.constructor && v.constructor.name === 'Uint8Array') {
+      o[k] = Buffer.from(v).toString('hex');
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      o[k] = hexify(v);
+    } else {
+      o[k] = v;
+    }
+  }
+  return o;
 }
 
 async function decodeManifest(buffer) {
@@ -45,9 +68,9 @@ async function decodeManifest(buffer) {
       defaults: true,
       arrays: true,
     });
-    return obj;
+    return hexify(obj);
   } catch (err) {
-    return { error: err.message, files: [], directories: [] };
+    return { error: err.message, files: [], directories: [], chunks: [] };
   }
 }
 
@@ -62,7 +85,7 @@ function formatManifestSummary(decoded) {
   }));
   const totalSize = files.reduce((s, f) => s + f.size, 0);
   const totalFiles = files.length;
-  return { totalFiles, totalSize, files, directories: (decoded.directories || []).length };
+  return { totalFiles, totalSize, files, directories: (decoded.directories || []).length, chunks: decoded.chunks || [] };
 }
 
 module.exports = { decodeManifest, formatManifestSummary };

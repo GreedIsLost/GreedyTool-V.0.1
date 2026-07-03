@@ -55,6 +55,7 @@ async function setCache(key, data) {
 }
 
 async function getCachedManifest(depotId, manifestId) {
+  if (!manifestId) return { cached: false, data: null, path: null };
   const dir = getCacheDir();
   const filePath = path.join(dir, 'manifests', `${depotId}_${manifestId}.manifest`);
   try {
@@ -69,6 +70,7 @@ async function getCachedManifest(depotId, manifestId) {
 }
 
 async function setCachedManifest(depotId, manifestId, buffer) {
+  if (!manifestId) return;
   try {
     const dir = getCacheDir();
     const sub = path.join(dir, 'manifests');
@@ -82,8 +84,14 @@ async function setCachedManifest(depotId, manifestId, buffer) {
 
 async function clearCache() {
   const dir = getCacheDir();
-  await fs.remove(dir).catch(err => console.error('Cache clear error:', err));
-  await ensureCacheDir();
+  const tmpDir = dir + '_old_' + Date.now();
+  try {
+    await fs.move(dir, tmpDir);
+    await ensureCacheDir();
+    await fs.remove(tmpDir);
+  } catch (err) {
+    await ensureCacheDir();
+  }
 }
 
 async function getCacheStats() {

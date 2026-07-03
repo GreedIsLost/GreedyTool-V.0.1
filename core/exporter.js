@@ -3,7 +3,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const { generateAppManifest } = require('./utils');
 
-async function exportBackup(appId, luaContent, manifestPaths, outputDir) {
+async function exportBackup(appId, luaContent, manifestPaths, outputDir, depots = []) {
   const filename = `greed_backup_${appId}_${Date.now()}.zip`;
   const outputPath = path.join(outputDir, filename);
   const output = fs.createWriteStream(outputPath);
@@ -19,8 +19,16 @@ async function exportBackup(appId, luaContent, manifestPaths, outputDir) {
   }
 
   return new Promise((resolve, reject) => {
-    output.on('close', () => resolve(outputPath));
-    archive.on('error', reject);
+    let settled = false;
+    function done(err, result) {
+      if (settled) return;
+      settled = true;
+      if (err) reject(err);
+      else resolve(result);
+    }
+    output.on('close', () => done(null, outputPath));
+    output.on('error', (err) => done(err));
+    archive.on('error', (err) => done(err));
 
     archive.pipe(output);
     archive.append(luaContent, { name: `${appId}.lua` });
@@ -29,7 +37,7 @@ async function exportBackup(appId, luaContent, manifestPaths, outputDir) {
       archive.file(mp, { name: path.basename(mp) });
     }
 
-    archive.append(generateAppManifest(appId), { name: `appmanifest_${appId}.acf` });
+    archive.append(generateAppManifest(appId, depots), { name: `appmanifest_${appId}.acf` });
 
     archive.finalize();
   });

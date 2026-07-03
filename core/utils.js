@@ -28,11 +28,18 @@ function getDepotCachePath(steamPath) {
 
 async function killSteam() {
   const { exec } = require('child_process');
-  const cmd = os.platform() === 'win32' ? 'taskkill /F /IM steam.exe' : 'pkill -f "steam" 2>/dev/null; pkill -f "steam.sh" 2>/dev/null';
+  const p = os.platform();
+  let cmd;
+  if (p === 'win32') {
+    cmd = 'taskkill /F /IM steam.exe 2>nul';
+  } else {
+    cmd = 'pkill -x -e steam 2>/dev/null; pkill -x -e steam.sh 2>/dev/null; pkill -x -e "steam-runtime" 2>/dev/null; pkill -f "steam-native" 2>/dev/null';
+  }
   return new Promise(r => exec(cmd, () => r()));
 }
 
 async function startSteam(steamPath) {
+  if (!steamPath) return;
   const { exec } = require('child_process');
   const p = os.platform();
   return new Promise(r => {
@@ -88,6 +95,55 @@ async function getImportedGames(steamAppsPath) {
   return games.sort((a, b) => b.appId - a.appId);
 }
 
+async function getInstalledGames(steamPath) {
+  const steamAppsPath = getSteamAppsPath(steamPath);
+  if (!steamAppsPath || !await fs.pathExists(steamAppsPath)) return [];
+
+  const parseAcfName = (filePath) => {
+    try {
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const m = raw.match(/"name"\t\t"([^"]+)"/);
+      return m ? m[1] : null;
+    } catch { return null; }
+  };
+
+  const libraryFoldersPath = path.join(steamAppsPath, 'libraryfolders.vdf');
+  const folders = [steamAppsPath];
+
+  if (await fs.pathExists(libraryFoldersPath)) {
+    try {
+      const raw = await fs.readFile(libraryFoldersPath, 'utf8');
+      const re = /"path"\t\t"([^"]+)"/g;
+      let m;
+      while ((m = re.exec(raw)) !== null) {
+        const libPath = path.join(m[1], 'steamapps');
+        if (libPath !== steamAppsPath && await fs.pathExists(libPath)) {
+          folders.push(libPath);
+        }
+      }
+    } catch {}
+  }
+
+  const games = [];
+  const seen = new Set();
+  for (const folder of folders) {
+    let files;
+    try { files = await fs.readdir(folder); } catch { continue; }
+    for (const f of files) {
+      const match = f.match(/^appmanifest_(\d+)\.acf$/);
+      if (match) {
+        const appId = parseInt(match[1]);
+        if (seen.has(appId)) continue;
+        seen.add(appId);
+        const acfPath = path.join(folder, f);
+        const name = parseAcfName(acfPath);
+        games.push({ appId, name: name || `App ${appId}`, acfPath });
+      }
+    }
+  }
+  return games.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+}
+
 async function removeGame(appId, steamAppsPath) {
   let removed = false;
   const manifestPath = path.join(steamAppsPath, `appmanifest_${appId}.acf`);
@@ -110,5 +166,5 @@ async function removeGame(appId, steamAppsPath) {
 module.exports = {
   getSteamPath, getSteamAppsPath, getDepotCachePath,
   killSteam, startSteam, generateAppManifest,
-  getImportedGames, removeGame,
+  getImportedGames, getInstalledGames, removeGame,
 };

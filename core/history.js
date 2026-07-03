@@ -1,15 +1,21 @@
 const fs = require('fs-extra');
 const path = require('path');
-const { app } = require('electron');
 
 const HISTORY_FILE = 'greed-history.json';
 
 function getStoragePath() {
-  const userDataPath = app ? app.getPath('userData') : path.join(__dirname, '..');
+  let userDataPath;
+  try {
+    const { app } = require('electron');
+    userDataPath = app.getPath('userData');
+  } catch {
+    userDataPath = path.join(__dirname, '..');
+  }
   return path.join(userDataPath, HISTORY_FILE);
 }
 
 let cache = null;
+let saveQueue = Promise.resolve();
 
 async function load() {
   if (cache) return cache;
@@ -29,7 +35,8 @@ async function load() {
 
 async function save(data) {
   cache = data;
-  await fs.writeJson(getStoragePath(), data, { spaces: 2 });
+  saveQueue = saveQueue.then(() => fs.writeJson(getStoragePath(), data, { spaces: 2 }));
+  await saveQueue;
 }
 
 async function addHistory(appId, title) {

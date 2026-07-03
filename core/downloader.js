@@ -33,6 +33,9 @@ async function downloadFile(url, outputPath) {
 }
 
 async function downloadManifest(depotId, manifestId, depotCachePath) {
+  if (!manifestId) {
+    return { success: false, path: null, error: 'No manifest ID available' };
+  }
   const id = { depotId, manifestId };
   const filename = `${depotId}_${manifestId}.manifest`;
   const outputPath = path.join(depotCachePath, filename);

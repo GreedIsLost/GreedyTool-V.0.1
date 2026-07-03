@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('greed', {
   removeUpdateEvent: (channel) => {
     ipcRenderer.removeAllListeners(channel);
   },
+  getInstalledGames: () => ipcRenderer.invoke('get-installed-games'),
   friendsStart: () => ipcRenderer.invoke('friends-start'),
   friendsStop: () => ipcRenderer.invoke('friends-stop'),
   friendsList: () => ipcRenderer.invoke('friends-list'),
@@ -65,4 +66,7 @@ contextBridge.exposeInMainWorld('greed', {
   removeFriendsEvent: (channel) => {
     ipcRenderer.removeAllListeners(channel);
   },
+  getManifestTree: (filePath) => ipcRenderer.invoke('get-manifest-tree', filePath),
+  depotSetKey: (data) => ipcRenderer.invoke('depot-set-key', data),
+  depotDownload: (data) => ipcRenderer.invoke('depot-download', data),
 });

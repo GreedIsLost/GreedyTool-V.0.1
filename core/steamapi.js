@@ -3,12 +3,17 @@ const axios = require('axios');
 const API_BASE = 'https://store.steampowered.com/api';
 
 async function searchGame(query) {
-  const res = await axios.get(`${API_BASE}/storesearch/`, {
-    params: { term: query, cc: 'US', l: 'en' },
-    timeout: 8000,
-    headers: { 'User-Agent': 'Mozilla/5.0' },
-  });
-  return res.data;
+  try {
+    const res = await axios.get(`${API_BASE}/storesearch/`, {
+      params: { term: query, cc: 'US', l: 'en' },
+      timeout: 8000,
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    return res.data;
+  } catch (err) {
+    console.error('SteamAPI searchGame error:', err.message);
+    return { items: [] };
+  }
 }
 
 async function getAppDetails(appId) {

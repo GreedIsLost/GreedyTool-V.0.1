@@ -47,20 +47,20 @@ async function getDepotInfoFromSteamDb(appId) {
     const html = res.data;
     const depots = [];
 
-    const tableRowRegex = /<tr[^>]*data-depot-id=["'](\d+)["'][^>]*>([\s\S]*?)<\/tr>/gi;
+    const tableRowRegex = /<tr[^>]*?data-depot-id[=:]["'](\d+)["'][^>]*?>([\s\S]*?)<\/tr>/gi;
     let trMatch;
     while ((trMatch = tableRowRegex.exec(html)) !== null) {
       const depotId = parseInt(trMatch[1]);
       const rowHtml = trMatch[2];
-      const manifestMatch = rowHtml.match(/data-manifest-id=["'](\d+)["']/);
+      const manifestMatch = rowHtml.match(/data-manifest-id[=:]["'](\d+)["']/);
       const manifestId = manifestMatch ? parseInt(manifestMatch[1]) : null;
       depots.push({ depotId, manifestId });
     }
 
     if (depots.length > 0) return depots;
 
-    const depotRegex = /data-depot-id=["'](\d+)["']/g;
-    const manifestRegex = /data-manifest-id=["'](\d+)["']/g;
+    const depotRegex = /data-depot-id[=:]["'](\d+)["']/g;
+    const manifestRegex = /data-manifest-id[=:]["'](\d+)["']/g;
     let m;
     const depotIds = [];
     while ((m = depotRegex.exec(html)) !== null) {
@@ -79,13 +79,13 @@ async function getDepotInfoFromSteamDb(appId) {
 
     if (depots.length > 0) return depots;
 
-    const scriptMatch = html.match(/DepotIds\s*=\s*\[([^\]]+)\]/);
-    if (scriptMatch || html.match(/var\s+depotIds\s*=/)) {
-      const idMatches = html.match(/(\d+)/g);
-      if (idMatches && idMatches.length > 0) {
-        const firstId = parseInt(idMatches[0]);
-        return [{ depotId: firstId, manifestId: Math.floor(Date.now() / 1000) }];
-      }
+    const appIdMatch = html.match(/appid[=:]["']?(\d+)/i);
+    const manifestIdMatch = html.match(/manifestid[=:]["']?(\d+)/i);
+    if (appIdMatch) {
+      return [{
+        depotId: appIdMatch[1] ? parseInt(appIdMatch[1]) : parseInt(appId),
+        manifestId: manifestIdMatch ? parseInt(manifestIdMatch[1]) : null,
+      }];
     }
 
     const fallbackDepot = html.match(/depot[\/\\](\d+)/);
@@ -93,7 +93,7 @@ async function getDepotInfoFromSteamDb(appId) {
     if (fallbackDepot) {
       return [{
         depotId: parseInt(fallbackDepot[1]),
-        manifestId: fallbackManifest ? parseInt(fallbackManifest[1]) : Math.floor(Date.now() / 1000),
+        manifestId: fallbackManifest ? parseInt(fallbackManifest[1]) : null,
       }];
     }
 
@@ -109,7 +109,7 @@ async function getCommonDepotPattern(appId) {
   const unique = [...new Set(patterns)];
   return unique.map(depotId => ({
     depotId,
-    manifestId: Math.floor(Date.now() / 1000),
+    manifestId: null,
   }));
 }
 
