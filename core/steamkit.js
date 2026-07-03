@@ -47,20 +47,20 @@ async function getDepotInfoFromSteamDb(appId) {
     const html = res.data;
     const depots = [];
 
-    const tableRowRegex = /<tr[^>]*?data-depot-id[=:]["'](\d+)["'][^>]*?>([\s\S]*?)<\/tr>/gi;
+    const tableRowRegex = /<tr[^>]*?data-depot-id="(\d+)"[^>]*?>([\s\S]*?)<\/tr>/gi;
     let trMatch;
     while ((trMatch = tableRowRegex.exec(html)) !== null) {
       const depotId = parseInt(trMatch[1]);
       const rowHtml = trMatch[2];
-      const manifestMatch = rowHtml.match(/data-manifest-id[=:]["'](\d+)["']/);
+      const manifestMatch = rowHtml.match(/data-manifest-id="(\d+)"/);
       const manifestId = manifestMatch ? parseInt(manifestMatch[1]) : null;
       depots.push({ depotId, manifestId });
     }
 
     if (depots.length > 0) return depots;
 
-    const depotRegex = /data-depot-id[=:]["'](\d+)["']/g;
-    const manifestRegex = /data-manifest-id[=:]["'](\d+)["']/g;
+    const depotRegex = /data-depot-id="(\d+)"/g;
+    const manifestRegex = /data-manifest-id="(\d+)"/g;
     let m;
     const depotIds = [];
     while ((m = depotRegex.exec(html)) !== null) {

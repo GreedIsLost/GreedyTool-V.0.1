@@ -99,9 +99,9 @@ async function getInstalledGames(steamPath) {
   const steamAppsPath = getSteamAppsPath(steamPath);
   if (!steamAppsPath || !await fs.pathExists(steamAppsPath)) return [];
 
-  const parseAcfName = (filePath) => {
+  const parseAcfName = async (filePath) => {
     try {
-      const raw = fs.readFileSync(filePath, 'utf8');
+      const raw = await fs.readFile(filePath, 'utf8');
       const m = raw.match(/"name"\t\t"([^"]+)"/);
       return m ? m[1] : null;
     } catch { return null; }
@@ -136,7 +136,7 @@ async function getInstalledGames(steamPath) {
         if (seen.has(appId)) continue;
         seen.add(appId);
         const acfPath = path.join(folder, f);
-        const name = parseAcfName(acfPath);
+        const name = await parseAcfName(acfPath);
         games.push({ appId, name: name || `App ${appId}`, acfPath });
       }
     }

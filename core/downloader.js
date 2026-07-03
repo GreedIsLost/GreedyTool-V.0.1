@@ -58,12 +58,6 @@ async function downloadManifest(depotId, manifestId, depotCachePath) {
     }
   }
 
-  if (cached.data) {
-    const fallbackPath = path.join(depotCachePath, filename);
-    await fs.writeFile(fallbackPath, cached.data);
-    return { success: true, path: fallbackPath, cached: true };
-  }
-
   return { success: false, path: null };
 }
 
